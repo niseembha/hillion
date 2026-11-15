@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#214f3d" />
+    <meta name="description" content="Seven clues. One Greenhill senior. Open the case and discover the stories hiding in your own hallways. A fictional Hillion prototype." />
+    <title>Hillion — A little mystery in your everyday.</title>
+    <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
+    <link rel="stylesheet" href="/src/style.css" />
+    <script type="module" src="/src/app.js"></script>
+  </head>
+  <body>
+    <div class="campus" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="wordmark" href="/" aria-label="Hillion home">hillion<span class="wordmark-spark">✳</span><span class="wordmark-dot"></span></a>
+      <span class="header-tagline">A little mystery in your everyday.</span>
+      <button class="help-button" id="help-button"><span aria-hidden="true">?</span> How to play</button>
+    </header>
+    <main id="app"></main>
+    <footer class="site-footer"><span>Made for the people who make Greenhill.</span><span class="prototype-label"><i></i> FICTIONAL DEMO <span class="version">/ V0.1</span></span><button id="reset-button" class="text-button">↻ Reset round</button></footer>
+    <div class="sr-only" role="status" aria-live="polite" id="announcer"></div>
+    <dialog id="help-dialog" class="help-dialog">
+      <button class="dialog-close" aria-label="Close instructions">×</button>
+      <span class="eyebrow">THE FIELD GUIDE</span><h2>Everyone has a story.<br>Can you spot whose?</h2>
+      <ol class="rules"><li><strong>Follow the evidence.</strong> Uncover seven short facts, from wildly obscure to pretty familiar. Take another clue whenever you like.</li><li><strong>Make your connection.</strong> Search the fictional senior roster. You get three guesses for the whole case. Wrong guesses cost 100 points.</li><li><strong>Meet the mystery.</strong> Solve it early for more points. Out of guesses? Keep reading, then meet the senior.</li></ol>
+      <div class="scoring-guide"><span class="eyebrow">CLUE</span><span class="eyebrow">BASE POINTS</span><div>1 / 2 / 3 / 4 / 5 / 6 / 7</div><div>1,000 / 850 / 700 / 550 / 400 / 250 / 100</div></div>
+      <p class="fine-print">Final score = base points − 100 per wrong guess, with a minimum of 0. An unsolved case earns 0. This is one replayable fictional case, not a live daily challenge. No real student data or official school affiliation.</p>
+      <button class="primary-button dialog-close-button">Got it. Let's investigate <span>↗</span></button>
+    </dialog>
+  </body>
+</html>
