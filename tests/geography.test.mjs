@@ -20,3 +20,13 @@ test('sampled walking curves clear mapped building footprints with a pedestrian 
  previous=stop.position;
  }
 });
+test('opening is on a broad football field with a grass buffer before the walkway',()=>{
+ const field=footprints.find(item=>item.field);
+ assert.ok(field.maxX-field.minX>=39.9&&field.maxZ-field.minZ>=79.9);
+ for(const point of [introShot.position,route[0].position]){
+  assert.ok(point[0]>field.minX+5&&point[0]<field.maxX-5);
+  assert.ok(point[2]>field.minZ+5&&point[2]<field.maxZ-5);
+ }
+ assert.ok(route[1].position[0]-field.maxX>4);
+ assert.ok(route[1].glance.target[0]>route[1].via.at(-1)[0], 'Court is east/right of the northbound approach');
+});

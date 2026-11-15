@@ -2,7 +2,8 @@
 // North is -Z, east is +X. One map pixel = 0.12 world units.
 export const mapPoint = (x, y, height = 1.72) => [(x - 1000) * 0.12, height, (y - 700) * 0.12];
 export const footprints = [
-  { name: 'Brinkmann Field', rect: [670, 935, 795, 1265], field: true },
+  // Photos show a much wider field and a grass apron before the eastern walkway.
+  { name: 'Brinkmann Field', rect: [416.667, 933.333, 750, 1600], field: true },
   { name: 'Phillips Family Gymnasium', rect: [690, 765, 778, 863] },
   { name: 'Phillips Family Athletic Center', rect: [650, 640, 775, 745] },
   { name: 'Ginsburg Natatorium', rect: [610, 640, 650, 725] },

@@ -395,6 +395,70 @@ export class CampusWorld {
     this.building(4, 47, 32, 9, 4.5);
   }
 
+  makeAthleticApproach() {
+    const m=this.m,field=footprints.find(item=>item.field);
+    const cx=(field.minX+field.maxX)/2,cz=(field.minZ+field.maxZ)/2;
+    this.box(cx,0,cz,40,.04,80,m.lawn);
+    for(let i=0;i<10;i++) this.box(cx,.025,32+i*8,39.8,.012,8,i%2?m.lawn:m.grass);
+    for(const x of [field.minX+.7,field.maxX-.7])this.box(x,.05,cz,.075,.018,78.6,m.white);
+    for(let i=0;i<=10;i++){
+      const z=36+i*6.4;this.box(cx,.05,z,38.6,.018,.065,m.white);
+      for(const x of [cx-6,cx+6])for(let j=1;j<5&&i<10;j++)this.box(x,.05,z+j*1.28,.38,.018,.045,m.white);
+    }
+    for(const z of [30,106]){
+      this.column(cx,1.5,z,.1,3,m.gold);this.box(cx,3,z,5.6,.12,.12,m.gold);
+      for(const x of [cx-2.8,cx+2.8])this.column(x,4.85,z,.075,3.7,m.gold);
+      this.column(cx,.7,z,.2,1.4,m.green);
+    }
+    // Sideline seating, with the playing area separated from the campus walkway.
+    for(const z of [59,82])for(let row=0;row<4;row++){
+      this.box(-72-row*.65,.45+row*.36,z,.62,.12,14,m.metal);
+      for(const dz of [-6,0,6])this.box(-72-row*.65,(.45+row*.36)/2,z+dz,.08,.45+row*.36,.08,m.frame);
+    }
+    for(const z of [42,94]){this.column(-77,7,z,.11,14,m.frame);this.box(-77,14,z,.35,.7,2.4,m.metal);}
+    // Gym: raised south-facing entry, glass doors and a shallow barrel roof.
+    const x=-31.9,z=13.7,w=10.56,d=11.76;
+    this.box(x,3.25,z,w,6.5,d,m.brick);
+    const roof=new THREE.Shape();roof.moveTo(-w/2-.4,0);for(let i=0;i<=24;i++){const t=i/24;roof.lineTo((t-.5)*(w+.8),1.7*Math.sin(t*Math.PI));}roof.lineTo(w/2+.4,-.16);roof.lineTo(-w/2-.4,-.16);roof.closePath();
+    const roofMesh=new THREE.Mesh(new THREE.ExtrudeGeometry(roof,{depth:d+.8,bevelEnabled:false}),m.metal);roofMesh.position.set(x,6.5,z-d/2-.4);roofMesh.castShadow=true;roofMesh.receiveShadow=true;this.scene.add(roofMesh);
+    this.box(x,2.2,21.5,10.2,4.4,4,m.brick);
+    this.box(x,2.8,23.54,8.6,2.8,.08,m.glassDark);
+    for(let dx=-4.3;dx<=4.3;dx+=1.075)this.box(x+dx,2.8,23.62,.06,2.9,.08,m.frame);
+    this.box(x,2.4,23.65,8.6,.06,.08,m.metal);
+    this.box(x,4.45,22,11.2,.18,5.5,m.roof);
+    for(let i=0;i<5;i++)this.box(x,.12*(5-i),23.8+i*.48,8.8,.24*(5-i),.5,m.stoneLight);
+    for(const side of [-1,1])this.beam([x+side*4.5,1.9,23.5],[x+side*4.5,.9,26.2],.04,m.frame);
+    this.path(-25.2,27,3.2,8);
+    this.makeBasketballCourt();
+    // Brick arcade on the gym's eastern side, open toward the basketball slab.
+    for(let az=9;az<=21;az+=3){
+      const arch=new THREE.Shape();arch.moveTo(-1.5,0);arch.lineTo(-1.5,2.6);arch.quadraticCurveTo(0,4.4,1.5,2.6);arch.lineTo(1.5,0);arch.lineTo(1.22,0);arch.lineTo(1.22,2.5);arch.quadraticCurveTo(0,4.0,-1.22,2.5);arch.lineTo(-1.22,0);arch.closePath();
+      const mesh=new THREE.Mesh(new THREE.ExtrudeGeometry(arch,{depth:.28,bevelEnabled:false}),m.brick);mesh.position.set(-25.1,0,az);mesh.castShadow=true;mesh.receiveShadow=true;this.scene.add(mesh);
+    }
+    this.box(-25.1,4,15,3.4,.18,16,m.roof);
+    for(const z of [15,20])this.tree(-3.5,z,.72);
+  }
+
+  makeBasketballCourt() {
+    const m=this.m,cx=-13.75,north=15,south=29;
+    const court=this.material('#aaa58d'),line=new THREE.MeshBasicMaterial({color:'#f5edd6'});
+    this.box(cx,.025,22,16.5,.08,14,court);
+    const mark=(points)=>{const vectors=points.map(p=>new THREE.Vector3(p[0],.078,p[1]));
+      const curve=points.length>5?new THREE.CatmullRomCurve3(vectors,false,'centripetal'):new THREE.CurvePath();
+      if(points.length<=5)for(let i=1;i<vectors.length;i++)curve.add(new THREE.LineCurve3(vectors[i-1],vectors[i]));const mesh=new THREE.Mesh(new THREE.TubeGeometry(curve,Math.max(2,points.length*3),.025,4,false),line);this.scene.add(mesh);};
+    const arc=(x,z,r,a,b)=>Array.from({length:41},(_,i)=>[x+Math.cos(a+(b-a)*i/40)*r,z+Math.sin(a+(b-a)*i/40)*r]);
+    mark([[-21.2,15.7],[-6.3,15.7],[-6.3,28.3],[-21.2,28.3],[-21.2,15.7]]);
+    mark([[-21.2,22],[-6.3,22]]);mark(arc(cx,22,1.7,0,Math.PI*2));
+    for(const [z,sign]of [[north+.8,1],[south-.8,-1]]){
+      mark([[cx-2,z],[cx-2,z+sign*3.5],[cx+2,z+sign*3.5],[cx+2,z]]);
+      mark(arc(cx,z+sign*.9,5,sign===1?0:Math.PI,sign===1?Math.PI:Math.PI*2));
+      this.column(cx,1.6,z-sign*.35,.065,3.2,m.frame);
+      this.box(cx,3.1,z,2,.95,.09,m.white);this.box(cx,3.08,z+sign*.055,.65,.43,.025,m.frame);
+      const rim=new THREE.Mesh(new THREE.TorusGeometry(.24,.025,6,20),m.gold);rim.rotation.x=Math.PI/2;rim.position.set(cx,2.85,z+sign*.4);this.scene.add(rim);
+      for(let i=0;i<8;i++){const a=i/8*Math.PI*2;this.beam([cx+Math.cos(a)*.23,2.83,z+sign*.4+Math.sin(a)*.23],[cx+Math.cos(a)*.14,2.48,z+sign*.4+Math.sin(a)*.14],.008,m.white);}
+    }
+  }
+
   // Reuse complete architectural models, including their detail and materials.
   placeModel(build, source, destination, rotation = 0, scale = [1,1,1]) {
     const counts = new Map([...this.batches].map(([key,batch]) => [key,batch.matrices.length]));
@@ -411,7 +475,7 @@ export class CampusWorld {
   makeCampus() {
     this.box(12,-.18,14,220,.25,220,this.m.grass);
     for (const building of footprints) {
-      if (building.field || ['STEM + Innovation Center','MPAC'].includes(building.name)) continue;
+      if (building.field || ['STEM + Innovation Center','MPAC','Phillips Family Gymnasium'].includes(building.name)) continue;
       const x=(building.minX+building.maxX)/2,z=(building.minZ+building.maxZ)/2;
       const w=building.maxX-building.minX,d=building.maxZ-building.minZ;
       this.placeModel(()=>this.building(0,0,w,d,building.name.includes('Athletic')?7:4.7),[0,0,0],[x,0,z],Math.PI);
@@ -425,25 +489,27 @@ export class CampusWorld {
     this.placeModel(()=>this.makeAtrium(),[-22.3,0,23.5],[67,0,-7],Math.PI/2,[.65,1,.8]);
     this.placeModel(()=>this.makeAmphitheater(),[0,0,6.2],[7,0,-8.1],Math.PI,[.44,.7,.44]);
     this.clockTower(-3.6,-8.4);
-    // The field remains west of its east-edge path, south of the gyms.
-    const field=footprints.find(item=>item.field);
-    const cx=(field.minX+field.maxX)/2,cz=(field.minZ+field.maxZ)/2;
-    this.box(cx,0,cz,field.maxX-field.minX,.04,field.maxZ-field.minZ,this.m.lawn);
-    for(let z=field.minZ+1;z<field.maxZ;z+=3.5)this.box(cx,.03,z,field.maxX-field.minX-.6,.025,.06,this.m.white);
-    for(const z of [field.minZ+1,field.maxZ-1]) {this.column(cx-2,2,z,.055,4,this.m.white);this.column(cx+2,2,z,.055,4,this.m.white);this.box(cx,4,z,4.1,.09,.09,this.m.white);}
+    this.makeAthleticApproach();
     // Continuous paths follow the black annotation; no parking arrows are used.
     let previous=introShot.position;
-    for(const stop of route) for(const point of [...stop.via,stop.position]) {
+    for(const [stopIndex,stop] of route.entries()) for(const point of [...stop.via,stop.position]) {
       const dx=point[0]-previous[0],dz=point[2]-previous[2],length=Math.hypot(dx,dz);
-      this.box((point[0]+previous[0])/2,.025,(point[2]+previous[2])/2,2.7,.07,length+.2,this.m.path,Math.atan2(dx,dz));
+      // No pavement on the playing surface. The walk begins on grass, then joins the path.
+      if(stopIndex!==0 && (previous[2]<=34 && point[2]<=34)) this.box((point[0]+previous[0])/2,.025,(point[2]+previous[2])/2,2.7,.07,length+.2,this.m.path,Math.atan2(dx,dz));
       previous=point;
     }
     for(const stop of route){const [x,,z]=stop.marker;this.box(x,.4,z,1.5,.8,.95,this.m.stone);this.box(x,.83,z,1.65,.08,1.08,this.m.stoneLight);}
-    for(const [x,z,size] of [[-18,33,.8],[-30,24,.9],[-18,14,.8],[-32,-14,.85],[-9,-38,.8],[1,-2,.9],[12,-2,.9],[19,-19,.8],[22,-26,.8],[47,-22,.85],[49,-2,.9],[62,6,.85],[80,-13,1],[-39,39,.9]])this.tree(x,z,size);
+    for(const [x,z,size] of [[-18,33,.8],[-30,24,.9],[-18,14,.8],[-32,-14,.85],[-9,-38,.8],[1,-2,.9],[12,-2,.9],[19,-19,.8],[22,-26,.8],[47,-22,.85],[49,-2,.9],[62,6,.85],[80,-13,1]])this.tree(x,z,size);
     for(const [x,z] of [[-18,26],[10,-3],[46,-23],[51,-5]])this.planter(x,z,2.3,1.5,true);
     this.bench(11,-4);this.bench(45,-24);
     // Curated reveal still uses the same yearbook; it can now happen at any stop.
-    for(let i=0;i<35;i++){const a=i/35*Math.PI*2;this.instance(this.leafGeometry,i%2?this.m.leafDark:this.m.leaf,[12+Math.cos(a)*92,5,12+Math.sin(a)*92],[6,5,6]);}
+    for(let i=0;i<35;i++){
+      const a=i/35*Math.PI*2,x=12+Math.cos(a)*92,z=12+Math.sin(a)*92;
+      const field=footprints.find(item=>item.field);
+      // Background vegetation must not intrude into the expanded playing surface.
+      if(x>field.minX-10&&x<field.maxX+10&&z>field.minZ-10&&z<field.maxZ+10)continue;
+      this.instance(this.leafGeometry,i%2?this.m.leafDark:this.m.leaf,[x,5,z],[6,5,6]);
+    }
   }
 
   makeMarkers() {
@@ -505,7 +571,8 @@ export class CampusWorld {
   cancelTravel() { if(this.travel){this.travel.resolve(false);this.travel=null;} }
   moveTo(index) {
     this.stop=index;this.mode='travel';this.markers.forEach(marker=>marker.beacon.visible=false);
-    const stop=route[index];return this.move(stop.position,stop.look,stop.via,stop.duration);
+    const stop=route[index];const journey=this.move(stop.position,stop.look,stop.via,stop.duration);
+    this.travel.glance=stop.glance;return journey;
   }
   move(position,look,via,duration) {
     this.cancelTravel();
@@ -546,6 +613,7 @@ export class CampusWorld {
     if(this.travel) {
       const travel=this.travel,t=Math.min(1,(now-travel.started)/travel.duration),s=ease(t);
       if(!this.calm){this.basePosition.copy(travel.curve.getPointAt(s));this.target.lerpVectors(travel.fromLook,travel.toLook,ease(Math.min(1,t*1.5)));bob=Math.sin(t*Math.PI*12)*0.018*Math.sin(t*Math.PI);}
+      if(!this.calm && travel.glance){const g=travel.glance,u=(t-g.start)/(g.end-g.start);if(u>0&&u<1)this.target.lerp(v(g.target),Math.sin(Math.PI*u)**2*g.strength);}
       this.onProgress(t);if(t>=1)this.finishTravel();
     }
     this.camera.position.copy(this.basePosition);this.camera.position.y+=bob;
