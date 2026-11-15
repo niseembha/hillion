@@ -158,7 +158,7 @@ export class CampusWorld {
       vertexShader: 'varying vec3 direction; void main(){direction=position;gl_Position=projectionMatrix*modelViewMatrix*vec4(position,1.0);}',
       fragmentShader: 'varying vec3 direction;void main(){vec3 d=normalize(direction);float h=pow(max(d.y,0.0),0.55);vec3 sky=mix(vec3(0.92,0.91,0.79),vec3(0.43,0.70,0.79),h);float sun=pow(max(dot(d,normalize(vec3(-0.5,0.8,0.5))),0.0),180.0);float halo=pow(max(dot(d,normalize(vec3(-0.5,0.8,0.5))),0.0),12.0);gl_FragColor=vec4(sky+sun*vec3(0.6,0.45,0.22)+halo*vec3(0.12,0.09,0.01),1.0);}'
     }));
-    sky.frustumCulled = false; this.scene.add(sky);
+    sky.frustumCulled = false; this.sky = sky; this.scene.add(sky);
     this.clouds = new THREE.Group();
     const cloudMaterial = new THREE.MeshBasicMaterial({ color: '#fff9df', transparent: true, opacity: 0.48, depthWrite: false });
     for (const [x, y, z, scale] of [[-40, 32, -70, 6], [22, 38, -85, 8], [68, 30, -45, 5]]) {
@@ -559,6 +559,9 @@ export class CampusWorld {
     this.markers.forEach(({beacon,diamond,index})=>{if(beacon.visible){beacon.position.y=route[index].marker[1]+.62+(this.calm?0:Math.sin(this.clock*1.7)*.045);diamond.rotation.y=this.calm?0:this.clock*.6;}});
     if(this.bookOpening>=0){const t=this.calm?1:Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=-ease(t)*Math.PI*.82;}
     if(this.mode==='discover'&&this.stop>=0){const marker=route[this.stop].marker;const point=new THREE.Vector3(marker[0],marker[1]+1.05,marker[2]).project(this.camera);this.onMarker({x:(point.x*.5+.5)*innerWidth,y:(-.5*point.y+.5)*innerHeight,visible:point.z<1});}
+    // Keep the sky inside the camera far plane throughout the campus journey.
+    // A world-origin dome leaves a clipped black hole when viewed from the field.
+    this.sky.position.copy(this.camera.position);
     this.renderer.render(this.scene,this.camera);
     this.canvas.dataset.frames=String(Number(this.canvas.dataset.frames||0)+1);
     if(this.travel)this.canvas.dataset.traveling='true';else this.canvas.dataset.traveling='false';
