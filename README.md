@@ -1,16 +1,17 @@
-# Hillion v0.1
+# Hillion v0.2 — Follow the story
 
-Seven clues. One Greenhill senior. A small, fully playable fictional mystery built with native HTML, CSS, JavaScript, and original SVG illustrations. No runtime dependencies, backend, or real student data.
+Seven clues. One Greenhill senior. A guided first-person mystery through a compact, stylized 3D campus.
 
 ## Run
 
-Requires Node.js 20 or later. No install step needed.
+Requires Node.js 20+ and a browser with WebGL2 / hardware acceleration.
 
 ```sh
+npm ci
 npm run dev
 ```
 
-Open **http://localhost:5173**. Use **Reset round** at any time, or replay from the spotlight. Set `PORT` to change the default port. `npm run build` produces a static `dist/` folder; serve it with `node scripts/serve.mjs --dist` or any static web host.
+Open **http://localhost:5173**. If another server is using that port, run `PORT=5174 npm run dev` and open port 5174 instead.
 
 ```sh
 npm test
@@ -18,20 +19,43 @@ npm run check
 npm run build
 ```
 
-Optional browser checks: with Chrome installed, install Playwright temporarily (`npm install --no-save --package-lock=false playwright`), run the local server, then `node tests/browser.mjs`. Screenshots go into ignored `test-results/`. An existing Playwright installation can be supplied through `PLAYWRIGHT_MODULE_PATH`.
+The build is a static `dist/` folder, including locally hosted Three.js and its MIT license. Preview that output with `node scripts/serve.mjs --dist`. There is no backend, account, remote asset service, or runtime CDN dependency.
 
-## Content and behavior
+## The experience
 
-- `src/data.js`: the curated seven-clue case, 140 fictional roster names, scoring table, spotlight text, and portrait path. The answer is **Maya Chen** for development testing.
-- `src/game.js`: pure state transitions, scoring, roster filtering, and spoiler-free result formatting.
-- `src/app.js`: dossier, autocomplete, animated reveal, spotlight, clipboard/native-share/manual-copy handling, and accessible interactions.
-- `src/style.css`: responsive paper-and-campus presentation, native CSS animations, and reduced-motion support.
-- `assets/`: original local campus and fictional portrait illustrations. No student photo, official school logo, third-party image, or remote font dependency.
+Start the mystery, follow an automatic eye-height camera journey, and inspect an envelope at each stop. A compact note lets you guess or continue. Previous clues stay available through **Collected notes**. **Arrive now** skips any journey. The wave icon enables calm motion; the operating system's reduced-motion preference is also respected.
 
-Each wrong guess costs one of three attempts and 100 potential points. Clues remain reviewable in the scrollable evidence sheet. After three wrong guesses, uncover the rest of the evidence before opening the spotlight. On clue seven, players may also finish voluntarily for zero points; that button states the outcome explicitly. The reveal takes about four seconds and can be skipped. Reduced-motion users go directly to the spotlight.
+Seven locations interpret the supplied photos: curved limestone amphitheater and clock tower, glass STEM courtyard with horizontal metal fins, elevated breezeway, shaded oak grove and brick arch, gathering stones, glazed timber atrium and stairs, and a final courtyard with a yearbook pedestal. These are original procedural meshes, not a geographical reconstruction. The reference photos remain local and are excluded from source publication and the deployed build.
 
-## Deliberate limits
+The final camera approaches the yearbook, its cover opens, and the fictional portrait appears for the first time. Skip directly to the spotlight at any point. The spotlight includes the result, portrait, message, expandable seven facts, sharing, and replay. Sharing preserves the original spoiler-free format and native-share / clipboard / manual-copy fallbacks.
 
-One fixed fictional case; the “today” language demonstrates the eventual daily experience. Refreshing resets the round. No accounts, storage, analytics, backend, daily scheduling, roster service, or student submission system. Mock data is bundled in the browser, so this prototype is not resistant to inspecting the source. Sharing uses the native share sheet on touch devices when available, clipboard on desktop, and a selectable text fallback. The shared report contains no identity, facts, or submitted names.
+## Source
 
-Next, playtest the clue order and pacing with a small group, refine the campus art and spotlight from that feedback, then replace the fictional case with curated, voluntarily submitted student content.
+- `src/game.js` and `src/data.js`: preserved rules, scoring, 140 fictional names, and curated case data.
+- `src/world.js`: Three.js scene, batched geometry, lighting, procedural textures, environmental motion, camera journeys, envelope markers, and animated yearbook.
+- `src/route.js`: seven eye-height stops, look directions, envelope positions, safe path waypoints, and timing. Adjust this file to tune pacing and framing.
+- `src/app.js`: coordinates gameplay with traveling, discovery, clue reading, reveal, and spotlight views. Restarting cancels pending journeys and reveal callbacks.
+- `src/roster-ui.js` and `src/share.js`: adapted search / validation and result-sharing interactions.
+- `src/style.css`: minimal HUD, focused note, contextual controls, spotlight, and responsive presentation.
+
+Three.js is the only runtime dependency. The world uses instanced geometry, capped pixel density, and cached sun shadows. No physics engine, free-roam controls, model downloads, React, or animation library.
+
+For development testing, the fictional answer is **Maya Chen**. Restart with the Hillion wordmark, the help menu, or **Play again** in the spotlight. Refreshing also starts over.
+
+## Browser verification
+
+With Chrome and Playwright available, start the server and run:
+
+```sh
+node tests/browser.mjs
+```
+
+Playwright is optional QA tooling; install it with `npm install --no-save --package-lock=false playwright`, or set `PLAYWRIGHT_MODULE_PATH` to an existing installation's module. `HILLION_URL` overrides the default preview URL. Screenshots are saved in ignored `test-results/`.
+
+The checks cover real WebGL rendering, guided movement and in-world markers, all seven clue locations, valid / invalid / duplicate guesses, a 450-point clue-four win, a three-guess loss with continued exploration, reveal and skip, collected clues, sharing fallbacks, keyboard search, reduced motion, restarting during a journey, and 1440/1280/768/390/320px layouts. The native OS share sheet is simulated; actual clipboard copying is exercised in Chrome.
+
+## Deliberate limits and next steps
+
+One fixed fictional mystery with no persistence or daily rotation. Content is bundled in the browser. This stylized set emphasizes recognizable architectural features and a guided route rather than exact campus dimensions; there are no characters, live campus activity, or audio. WebGL2 is required, with a recovery message if it is unavailable or its context is lost.
+
+Next, playtest travel length, clue framing, and the sense of place on the actual school laptops. Use that feedback to refine the route, foliage, and architectural detail before adding real, voluntarily submitted senior content.

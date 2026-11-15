@@ -1,6 +1,6 @@
 {
   "name": "hillion",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "private": true,
   "type": "module",
   "description": "Seven clues. One Greenhill senior. A fictional playable prototype.",
@@ -9,6 +9,9 @@
     "start": "node scripts/serve.mjs",
     "build": "node scripts/build.mjs",
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check src/app.js && node --check src/game.js && node --check src/data.js"
+    "check": "node --check src/app.js && node --check src/world.js && node --check src/route.js && node --check src/game.js && node --check src/data.js"
+  },
+  "dependencies": {
+    "three": "^0.182.0"
   }
 }

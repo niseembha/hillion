@@ -2,31 +2,29 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#214f3d" />
-    <meta name="description" content="Seven clues. One Greenhill senior. Open the case and discover the stories hiding in your own hallways. A fictional Hillion prototype." />
-    <title>Hillion — A little mystery in your everyday.</title>
+    <meta name="description" content="Seven clues. One Greenhill senior. Follow a guided 3D campus mystery in Hillion." />
+    <title>Hillion — Follow the story.</title>
     <link rel="icon" type="image/svg+xml" href="/assets/favicon.svg" />
     <link rel="stylesheet" href="/src/style.css" />
     <script type="module" src="/src/app.js"></script>
   </head>
-  <body>
-    <div class="campus" aria-hidden="true"></div>
-    <header class="site-header">
-      <a class="wordmark" href="/" aria-label="Hillion home">hillion<span class="wordmark-spark">✳</span><span class="wordmark-dot"></span></a>
-      <span class="header-tagline">A little mystery in your everyday.</span>
-      <button class="help-button" id="help-button"><span aria-hidden="true">?</span> How to play</button>
+  <body data-view="loading">
+    <canvas id="campus-world" aria-label="A stylized 3D Greenhill campus. The camera travels automatically between seven clue locations."></canvas>
+    <div class="world-shade" aria-hidden="true"></div>
+    <header class="game-header">
+      <button class="wordmark" id="home-button" aria-label="Hillion, restart mystery">hillion<span>✳</span><i></i></button>
+      <div id="hud" class="hud" aria-live="off"></div>
+      <div class="header-actions"><button id="motion-button" class="icon-button motion-button" aria-label="Use calm camera motion" title="Camera motion"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8c4-6 6 10 10 3s6-3 6 1M4 16h5m7-10h4"/></svg></button><button id="help-button" class="icon-button" aria-label="How to play">?</button><button id="fullscreen-button" class="icon-button fullscreen-button" aria-label="Enter fullscreen" title="Fullscreen"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 9V4h5m6 0h5v5m0 6v5h-5M9 20H4v-5"/></svg></button></div>
     </header>
-    <main id="app"></main>
-    <footer class="site-footer"><span>Made for the people who make Greenhill.</span><span class="prototype-label"><i></i> FICTIONAL DEMO <span class="version">/ V0.1</span></span><button id="reset-button" class="text-button">↻ Reset round</button></footer>
+    <main id="app"><div class="loading-screen"><span class="loading-mark">✳</span><p>Opening the campus gates…</p></div></main>
+    <button id="discovery-pin" class="discovery-pin" hidden aria-label="Inspect the clue envelope"><span class="pin-circle">✦</span><span class="pin-label">Inspect note <kbd>↵</kbd></span></button>
+    <div id="location-label" class="location-label" aria-live="polite"></div>
+    <div id="journey-footer" class="journey-footer"></div>
     <div class="sr-only" role="status" aria-live="polite" id="announcer"></div>
-    <dialog id="help-dialog" class="help-dialog">
-      <button class="dialog-close" aria-label="Close instructions">×</button>
-      <span class="eyebrow">THE FIELD GUIDE</span><h2>Everyone has a story.<br>Can you spot whose?</h2>
-      <ol class="rules"><li><strong>Follow the evidence.</strong> Uncover seven short facts, from wildly obscure to pretty familiar. Take another clue whenever you like.</li><li><strong>Make your connection.</strong> Search the fictional senior roster. You get three guesses for the whole case. Wrong guesses cost 100 points.</li><li><strong>Meet the mystery.</strong> Solve it early for more points. Out of guesses? Keep reading, then meet the senior.</li></ol>
-      <div class="scoring-guide"><span class="eyebrow">CLUE</span><span class="eyebrow">BASE POINTS</span><div>1 / 2 / 3 / 4 / 5 / 6 / 7</div><div>1,000 / 850 / 700 / 550 / 400 / 250 / 100</div></div>
-      <p class="fine-print">Final score = base points − 100 per wrong guess, with a minimum of 0. An unsolved case earns 0. This is one replayable fictional case, not a live daily challenge. No real student data or official school affiliation.</p>
-      <button class="primary-button dialog-close-button">Got it. Let's investigate <span>↗</span></button>
-    </dialog>
+    <dialog id="help-dialog" class="small-dialog"><button class="dialog-close" aria-label="Close instructions">×</button><span class="eyebrow">YOUR CAMPUS MYSTERY</span><h2>Follow the story.</h2><p>Find seven notes. Guess the senior.<br>You have three guesses. Continue anytime.</p><p>Earlier clues earn more points. Each wrong guess costs 100. No guesses left? Keep exploring.</p><details><summary>Point values</summary><p>Clues 1–7: 1,000 · 850 · 700 · 550 · 400 · 250 · 100. Minus 100 per wrong guess, minimum 0. Unsolved: 0.</p></details><button id="dialog-motion" class="secondary-button">Use calm camera motion</button><button id="reset-button" class="quiet-button">↻ Restart this fictional mystery</button><small>Fictional senior and roster. Stylized campus interpretation. No real student profiles.</small></dialog>
+    <dialog id="history-dialog" class="history-dialog"><button class="dialog-close" aria-label="Close collected clues">×</button><span class="eyebrow">YOUR COLLECTED NOTES</span><h2>The story so far.</h2><ol id="history-list"></ol></dialog>
+    <noscript><p class="unsupported">Hillion needs JavaScript and WebGL2 to open the 3D campus.</p></noscript>
   </body>
 </html>
