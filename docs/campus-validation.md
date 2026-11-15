@@ -1,5 +1,7 @@
 # Campus geography validation — November 15, 2026
 
+This is the first geography-pass record. The later [architecture and spacing review](campus-architecture-spacing.md) supersedes its building-detail and clearance results.
+
 [Open the local visual comparison](../references/processed/comparison/index.html). It contains **11 real-frame / before / after triptychs**, with source timestamps and registration confidence. [Overview](../references/processed/comparison/overview.jpg) · [Route overlaid on the supplied map](../references/processed/route-registration.png) · [Full reconstruction and uncertainty record](campus-route-reconstruction.md).
 
 These are approximate matched viewpoints, not calibrated photogrammetry. Both versions use the same map positions and headings, a 720×1280 portrait viewport, and an estimated 82° vertical field of view for comparison with the phone footage. The game's existing 53°/66° camera settings remain unchanged. Phone lens, precise camera height and GPS are unavailable. The baseline uses the actual prior world, route and layout from commit `5a0ad55f2f0ff8f74e5b53b8e7eba49732987550`; it was served in an isolated temporary checkout.

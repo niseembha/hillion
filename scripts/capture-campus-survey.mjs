@@ -4,7 +4,7 @@ import { mkdir, writeFile } from 'node:fs/promises';
 import { surveyViews } from '../src/campus-survey.js';
 const {chromium} = await import(process.env.PLAYWRIGHT_MODULE_PATH || 'playwright');
 const phase=process.argv[2]||'after';
-const directory=`references/processed/comparison/${phase}`;
+const directory=`references/processed/${process.env.SURVEY_COMPARISON||'comparison'}/${phase}`;
 await mkdir(directory,{recursive:true});
 const browser=await chromium.launch({channel:'chrome',headless:true});
 try {
@@ -14,11 +14,12 @@ try {
   await page.waitForFunction(()=>window.__campus?.canvas.dataset.ready==='true');
   await page.addStyleTag({content:'body > :not(canvas) { visibility:hidden !important; }'});
   // Use this checkout's definitions for BOTH servers, including an old baseline.
-  const views=surveyViews;
+  const views=surveyViews.map(({position,look,...view})=>view);
   for(const view of views){
-    await page.evaluate(view=>{
+    await page.evaluate(async view=>{
+      const {mapPoint}=await import('/src/campus-layout.js');
       const w=window.__campus;w.cancelTravel();w.calm=true;w.mode='survey';
-      w.basePosition.set(...view.position);w.target.set(...view.look);
+      w.basePosition.set(...mapPoint(...view.point));w.target.set(...mapPoint(...view.aim));
       // Portrait phone footage is much wider vertically than the game camera.
       // Lens metadata is unavailable; 82 degrees is an approximate QA framing.
       w.camera.fov=82;w.camera.updateProjectionMatrix();

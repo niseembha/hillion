@@ -1,7 +1,10 @@
 // Map authority: references/map-and-route.pdf, rendered 2200 × 1700.
 // North = -Z; east = +X. Scale is illustrative, NOT a metric survey.
+// Architecture pass: retain every map coordinate and double horizontal scale.
+// The earlier .12 scale halved the open space around eye-height architecture.
+export const MAP_SCALE = 0.24;
 // Ground occupancy excludes open, roofed passages seen in clips 04 and 09.
-export const mapPoint = (x, y, height = 1.72) => [(x - 1000) * 0.12, height, (y - 700) * 0.12];
+export const mapPoint = (x, y, height = 1.72) => [(x - 1000) * MAP_SCALE, height, (y - 700) * MAP_SCALE];
 export const footprints = [
   { name:'Brinkmann Field', rect:[670,935,795,1266], field:true },
   { name:'Phillips Family Gymnasium', rect:[690,762,775,862], custom:true },

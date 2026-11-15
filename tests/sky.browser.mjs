@@ -17,9 +17,13 @@ try {
   for(const [i,stop]of [introShot,...route].entries()){
    world.basePosition.set(...stop.position);world.target.set(...stop.look);
    await new Promise(resolve=>requestAnimationFrame(()=>requestAnimationFrame(resolve)));
+   world.scene.updateMatrixWorld(true);
    for(const x of [-.8,0,.8]) for(const y of [.2,.6,.95]){
     const ray=new Raycaster();ray.setFromCamera(new Vector2(x,y),world.camera);
-    const hit=ray.intersectObject(world.sky)[0];
+    let hit=ray.intersectObject(world.sky)[0];
+    // An exactly axis-aligned ray can land on the dome's shared triangle seam.
+    // Retry less than 0.01 screen pixels away; the far-plane check still applies.
+    if(!hit){ray.setFromCamera(new Vector2(x+0.00001,y),world.camera);hit=ray.intersectObject(world.sky)[0];}
     if(!hit||hit.distance>=world.camera.far)failures.push({stop:i,x,y,distance:hit?.distance});
    }
   }

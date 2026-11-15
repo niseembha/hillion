@@ -1,6 +1,8 @@
 import * as THREE from '/vendor/three.module.js';
 import { route, introShot, revealShot } from './route.js';
-import { footprints, mapPoint, landmarks } from './campus-layout.js';
+import { footprints, mapPoint, landmarks, MAP_SCALE } from './campus-layout.js';
+
+import { campusArchitecture } from './campus-architecture.js';
 
 const v = values => new THREE.Vector3(...values);
 const ease = t => t * t * (3 - 2 * t);
@@ -34,8 +36,8 @@ export class CampusWorld {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.12;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog('#cfddc7', 48, 140);
-    this.camera = new THREE.PerspectiveCamera(53, innerWidth / innerHeight, 0.1, 230);
+    this.scene.fog = new THREE.Fog('#cfddc7', 96, 280);
+    this.camera = new THREE.PerspectiveCamera(53, innerWidth / innerHeight, 0.1, 460);
     this.camera.position.copy(this.basePosition);
     this.makeMaterials();
     this.makeSky();
@@ -146,7 +148,9 @@ export class CampusWorld {
       const mesh = new THREE.InstancedMesh(geometry, material, matrices.length);
       matrices.forEach((matrix, i) => mesh.setMatrixAt(i, matrix));
       mesh.castShadow = !material.transparent && material !== this.m.grass && material !== this.m.path && material !== this.m.pathAlt;
-      mesh.receiveShadow = true; mesh.computeBoundingSphere(); this.scene.add(mesh);
+      mesh.receiveShadow = ![this.m.windowBack,this.m.glass,this.m.glassDark].includes(material);
+      if(geometry.type==='PlaneGeometry'||material===this.m.windowBack)mesh.castShadow=false;
+      mesh.computeBoundingSphere(); this.scene.add(mesh);
       if ([this.m.leaf, this.m.leafLight, this.m.leafDark].includes(material)) this.animated.push(mesh);
     }
     this.batches.clear();
@@ -169,11 +173,14 @@ export class CampusWorld {
 
   makeLighting() {
     this.scene.add(new THREE.HemisphereLight('#e0f0e5', '#a0a56e', 2.1));
-    const sun = new THREE.DirectionalLight('#fff0ce', 3.1); sun.position.set(-32, 47, 30); sun.castShadow = true;
+    const sun = new THREE.DirectionalLight('#fff0ce', 3.1); sun.position.set(-64, 94, 60); sun.castShadow = true;
     sun.shadow.mapSize.set(innerWidth < 700 ? 2048 : 4096, innerWidth < 700 ? 2048 : 4096);
-    Object.assign(sun.shadow.camera, { left: -58, right: 58, top: 58, bottom: -58, near: 1, far: 130 });
+    Object.assign(sun.shadow.camera, { left: -75, right: 75, top: 75, bottom: -75, near: 1, far: 260 });
     sun.shadow.normalBias = 0.08; sun.shadow.bias = 0.00015; sun.shadow.radius = 3;
-    this.sun = sun; this.scene.add(sun);
+    this.shadowAnchor=new THREE.Vector3(this.basePosition.x,0,this.basePosition.z);
+    sun.position.copy(this.shadowAnchor).add(new THREE.Vector3(-64,94,60));
+    sun.target.position.copy(this.shadowAnchor);
+    this.sun = sun; this.scene.add(sun,sun.target);
   }
 
   path(x, z, width, depth) {
@@ -219,20 +226,6 @@ export class CampusWorld {
     for (const side of [-1, 1]) { place(side * (length / 2 - 0.3), 0.28, 0, 0.09, 0.55, 0.53, this.m.frame); place(side * (length / 2 - 0.3), 0.89, -0.35, 0.065, 0.9, 0.065, this.m.frame); }
   }
 
-  building(x, z, width, depth, height = 4.2) {
-    this.box(x, height / 2, z, width, height, depth, this.m.brick);
-    this.box(x, height + 0.06, z, width + 0.5, 0.18, depth + 0.6, this.m.roof);
-    this.box(x, height - 0.22, z + depth / 2 + 0.7, width + 0.8, 0.18, 1.8, this.m.roof);
-    for (let dx = -width / 2 + 1; dx < width / 2; dx += 2.3) {
-      this.box(x + dx, 2, z + depth / 2 + 0.035, 1.6, 2.35, 0.12, this.m.frame);
-      this.box(x + dx, 2, z + depth / 2 + 0.105, 1.4, 2.15, 0.035, this.m.glassDark);
-      this.box(x + dx, 2.0, z + depth / 2 + 0.14, 0.06, 2.2, 0.05, this.m.metal);
-      this.box(x + dx, 1.55, z + depth / 2 + 0.14, 1.4, 0.06, 0.05, this.m.metal);
-    }
-    for (let dx = -width / 2; dx <= width / 2; dx += 3.2) this.box(x + dx, 1.9, z + depth / 2 + 1.3, 0.2, 3.8, 0.2, this.m.stone);
-    for (let dz = -depth / 2; dz <= depth / 2; dz += 0.7) this.box(x, height + 0.16, z + dz, width + 0.4, 0.045, 0.035, this.m.metal);
-  }
-
   clockTower(x, z) {
     for(const dx of [-.95,.95])for(const dz of [-.75,.75]){
       this.box(x+dx,1.6,z+dz,.42,3.2,.42,this.m.stone);
@@ -262,27 +255,7 @@ export class CampusWorld {
   // subdivisions are visual estimates from the footage, not measurements.
   mapBox(rect, y, h, material) {
     const [a,b,c,d]=rect,point=mapPoint((a+c)/2,(b+d)/2,0);
-    this.box(point[0],y,point[2],(c-a)*.12,h,(d-b)*.12,material);
-  }
-
-  coveredWalk(rect, height=3.4, axis='z', timber=false) {
-    const [a,b,c,d]=rect,m=this.m;
-    this.mapBox(rect,0,.065,m.path);
-    this.mapBox(rect,height,.18,m.roof);
-    this.mapBox(rect,height-.14,.12,timber?m.woodLight:m.plaster);
-    if(axis==='z') {
-      for(let y=b+5;y<d;y+=28)for(const x of [a+2,c-2]){
-        // The athletic entrance opens between the canopy piers (02:04).
-        if(a===777&&y>766&&y<788)continue;
-        const point=mapPoint(x,y,0);this.box(point[0],height/2,point[2],.28,height,.3,m.brick);
-        this.mapBox([a,y-1,c,y+1],height-.22,.13,m.wood);
-      }
-    } else {
-      for(let x=a+7;x<c;x+=28)for(const y of [b+2,d-2]){
-        const point=mapPoint(x,y,0);this.box(point[0],height/2,point[2],.28,height,.3,m.brick);
-        this.mapBox([x-1,b,x+1,d],height-.22,.13,m.wood);
-      }
-    }
+    this.box(point[0],y,point[2],(c-a)*MAP_SCALE,h,(d-b)*MAP_SCALE,material);
   }
 
   picnicTable(mx,my,umbrella=false) {
@@ -320,124 +293,11 @@ export class CampusWorld {
     }
     this.makePhillipsGym();
     const court=landmarks.basketball;
-    this.placeModel(()=>this.makeBasketballCourt(),[-13.75,0,22],mapPoint((court[0]+court[2])/2,(court[1]+court[3])/2,0),0,[(court[2]-court[0])*.12/16.5,1,(court[3]-court[1])*.12/14]);
+    this.placeModel(()=>this.makeBasketballCourt(),[-13.75,0,22],mapPoint((court[0]+court[2])/2,(court[1]+court[3])/2,0),0,[(court[2]-court[0])*MAP_SCALE/16.5,1,(court[3]-court[1])*MAP_SCALE/14]);
     this.mapBox([803,840,805,899],.33,.66,m.stone);
     for(const y of [888,895,902])this.mapBox([803,y,815,y+2],.08,.16,m.stoneLight);
-    for(const y of [822,853,882]){const pt=mapPoint(781,y,0);this.tree(pt[0],pt[2],.6);}
+    for(const y of [822,853,882]){const pt=mapPoint(778,y,0);this.tree(pt[0],pt[2],.6);}
     this.mapBox([788,790,792,936],-.01,.06,m.path);
-  }
-
-  makePhillipsGym() {
-    const m=this.m,gym=footprints.find(item=>item.name==='Phillips Family Gymnasium');
-    const x=(gym.minX+gym.maxX)/2,z=(gym.minZ+gym.maxZ)/2,w=gym.maxX-gym.minX,d=gym.maxZ-gym.minZ,east=gym.maxX;
-    this.box(x,3.9,z,w,7.8,d,m.brick);
-    const roof=new THREE.Shape();roof.moveTo(-w/2-.2,-.12);
-    for(let i=0;i<=32;i++){const t=i/32;roof.lineTo((t-.5)*(w+.4),1.25*Math.sin(t*Math.PI));}
-    roof.lineTo(w/2+.2,-.12);roof.closePath();
-    const barrel=new THREE.Mesh(new THREE.ExtrudeGeometry(roof,{depth:d+.4,bevelEnabled:false}),m.metal);
-    barrel.position.set(x,7.8,gym.minZ-.2);barrel.castShadow=true;this.scene.add(barrel);
-    const entry=mapPoint(775,777,0);
-    this.box(east+.035,1.55,entry[2],.08,3,3.3,m.glassDark);
-    for(let dz=-1.5;dz<=1.5;dz+=.5)this.box(east+.09,1.55,entry[2]+dz,.07,3,.045,m.metal);
-    this.box(east+.1,2.65,entry[2],.07,.08,3.3,m.white);
-    this.mapBox([775,763,816,790],4.1,.2,m.roof);
-    for(const mx of [778,812])for(const my of [766,787]){
-      const p=mapPoint(mx,my,0);this.box(p[0],2,p[2],.35,4,.35,m.stoneLight);
-      this.beam([p[0],3.7,p[2]],[p[0]+.45,4.1,p[2]],.04,m.metal);
-    }
-    // Clips 01:54–03:08 show posts, exposed rafters, and a straight opening.
-    // There are no cross-wall arches or masonry dead end on this route.
-    this.coveredWalk([777,633,804,822],3.35,'z',true);
-    this.coveredWalk([777,585,804,633],3.35,'z',true);
-    const pt=mapPoint(778,777,0);
-    const sign=document.createElement('canvas');sign.width=512;sign.height=192;
-    const ctx=sign.getContext('2d');ctx.fillStyle='#28563e';ctx.fillRect(0,0,512,192);ctx.fillStyle='#f5ead1';ctx.font='bold 30px Georgia';ctx.textAlign='center';ctx.fillText('GREENHILL HORNETS',256,50);ctx.font='bold 112px Georgia';ctx.fillText('G',256,160);
-    const texture=new THREE.CanvasTexture(sign);texture.colorSpace=THREE.SRGBColorSpace;
-    const panel=new THREE.Mesh(new THREE.PlaneGeometry(2.5,.94),new THREE.MeshStandardMaterial({map:texture}));panel.rotation.y=Math.PI/2;panel.position.set(east+.12,2,pt[2]);this.scene.add(panel);
-  }
-
-  makeVSI() {
-    const m=this.m,b=footprints.find(item=>item.name==='STEM + Innovation Center');
-    this.mapBox(b.rect,6.05,4.3,m.plaster);
-    this.mapBox([794,422,960,533],1.9,3.8,m.plaster);
-    this.mapBox([794,570,819,632],4.1,8.2,m.plaster);
-    // The southwest leg has an open east/west passage below its upper floor.
-    this.mapBox([794,545,832,570],5.9,4.6,m.plaster);
-    this.mapBox([789,545,835,570],3.53,.22,m.woodLight);
-    for(let x=790;x<=834;x+=3)this.mapBox([x,545,x+.65,570],3.38,.08,m.wood);
-    // South facade: ground-floor glass, upper clerestory and horizontal fins.
-    const z=mapPoint(0,545,0)[2];
-    for(let x=833;x<960;x+=16){
-      const [wx]=mapPoint(x+8,0,0);
-      this.box(wx,1.8,z+.025,1.83,3.5,.06,m.glass);
-      this.box(wx,1.8,z+.08,.075,3.6,.08,m.frame);
-      this.box(wx,6.9,z+.04,1.7,2.2,.08,m.glassDark);
-    }
-    for(let y=3.9;y<6.1;y+=.25)this.mapBox([832,545,962,548],y,.11,m.metal);
-    for(let my=580;my<625;my+=19){
-      const [wx,,wz]=mapPoint(793.8,my,0);
-      this.box(wx,2,wz,.08,2.6,1.45,m.glassDark);
-      this.box(wx-.13,2,wz,.18,2.7,.08,m.metal);
-    }
-    // Paved court with low stone seat walls; Rotunda stays to the south/right.
-    this.mapBox([831,547,943,571],-.015,.07,m.path);
-    for(const [mx,my]of [[854,568],[891,568],[923,569]])this.picnicTable(mx,my);
-    for(const mx of [839,919]){const [x,,tz]=mapPoint(mx,572,0);this.tree(x,tz,.43);}
-    for(const rect of [[797,545,824,547],[797,566,824,568]])this.mapBox(rect,.26,.52,m.stoneLight);
-    // Parking northwest is visible before the east turn (04:08–24).
-    this.mapBox([654,480,780,582],-.04,.04,m.pathAlt);
-    for(let my=486;my<580;my+=12)this.mapBox([744,my,778,my+.5],.005,.015,m.white);
-  }
-
-  makeMPAC() {
-    const m=this.m;
-    // Clip 09: solid limestone cantilever above recessed glazing, not a timber atrium.
-    this.mapBox([1478,580,1630,700],7.1,6.2,m.stone);
-    this.mapBox([1477,578,1632,702],10.25,.16,m.stoneLight);
-    this.mapBox([1533,582,1630,700],2,4,m.plaster);
-    this.mapBox([1508,582,1533,700],.02,.08,m.stoneLight);
-    this.mapBox([1508,582,1508.4,700],2,4,m.glass);
-    this.mapBox([1508,582,1533,582.4],2,4,m.glass);
-    const west=mapPoint(1507.8,0,0)[0];
-    for(let my=586;my<=700;my+=8){
-      const z=mapPoint(0,my,0)[2];this.box(west,2,z,.1,4,.07,m.metal);
-    }
-    for(const my of [605,647,688]){
-      const [x,,z]=mapPoint(1499,my,0);this.column(x,2,z,.07,4,m.frame);
-    }
-    for(let my=596;my<=628;my+=7){
-      const [x,,z]=mapPoint(1477.8,my,0);this.box(x,7.1,z,.08,3.2,.65,m.glassDark);
-      this.box(x-.035,7.1,z+.36,.1,3.35,.06,m.metal);
-    }
-    this.mapBox([1475,588,1507,700],-.01,.07,m.path);
-    // Lawn and chairs on the south side of the diagonal approach.
-    for(const [mx,my]of [[1450,626],[1461,643],[1470,666],[1454,672]]){
-      const [x,,z]=mapPoint(mx,my,0);this.bench(x,z,Math.PI/2,1.0);
-    }
-    this.mapBox([1497,624,1505,644],.25,.5,m.stoneLight);
-    this.mapBox([1498,625,1504,643],.52,.04,m.pathAlt);
-    this.mapBox([1350,478,1465,550],-.06,.035,m.pathAlt);
-    for(let x=1357;x<1465;x+=12)this.mapBox([x,480,x+.5,512],-.025,.012,m.white);
-  }
-
-  makeAcademicCourts() {
-    const m=this.m;
-    // Low classroom colonnades frame the quadrangle and the north Fulton court.
-    this.coveredWalk([1148,573,1177,650],3.35,'z');
-    this.coveredWalk([1180,558,1244,575],3.35,'x');
-    this.coveredWalk([1238,476,1345,488],3.35,'x',true);
-    this.coveredWalk([1327,486,1344,518],3.35,'z',true);
-    this.mapBox(landmarks.upperCourt,-.015,.08,m.brick);
-    for(let x=1240;x<1338;x+=7)this.mapBox([x,478,x+.35,512],.031,.008,m.pathAlt);
-    for(const [mx,my]of [[1254,486],[1308,488]]){const [x,,z]=mapPoint(mx,my,0);this.tree(x,z,.58);}
-    for(const [mx,my]of [[1255,507],[1311,505]])this.picnicTable(mx,my);
-    for(const [mx,my]of [[953,568],[983,580],[1023,594],[1087,593],[1195,541],[1218,530],[1372,559],[1417,542]]){
-      const [x,,z]=mapPoint(mx,my,0);this.tree(x,z,.7);
-    }
-    this.picnicTable(955,574,true);this.picnicTable(1037,600);
-    for(const [mx,my]of [[1033,646],[1068,615],[1114,644]]){
-      const [x,,z]=mapPoint(mx,my,0);this.box(x,.2,z,.8,.4,.6,m.stoneLight);
-    }
   }
 
   walkCurve(points,width=2.1,flagstone=false) {
@@ -492,36 +352,6 @@ export class CampusWorld {
     build();
     for (const [key,batch] of this.batches) for(let i=counts.get(key)||0;i<batch.matrices.length;i++) batch.matrices[i].premultiply(transform);
     for (const child of this.scene.children) if(!previous.has(child)) child.applyMatrix4(transform);
-  }
-
-  makeCampus() {
-    this.box(12,-.18,14,220,.25,220,this.m.grass);
-    for(const building of footprints) {
-      if(building.field||building.custom)continue;
-      const x=(building.minX+building.maxX)/2,z=(building.minZ+building.maxZ)/2;
-      const w=building.maxX-building.minX,d=building.maxZ-building.minZ;
-      this.placeModel(()=>this.building(0,0,w,d,building.height||4.3),[0,0,0],[x,0,z],Math.PI);
-      // West-facing classroom windows seen while crossing east through the quad.
-      for(let wz=building.minZ+.7;wz<building.maxZ-.4;wz+=1.5){
-        this.box(building.minX-.035,1.9,wz,.08,2.4,.9,this.m.frame);
-        this.box(building.minX-.085,1.9,wz,.035,2.2,.78,this.m.glassDark);
-      }
-    }
-    this.makeAthleticApproach();this.makeVSI();this.makeMPAC();this.makeAcademicCourts();
-    this.placeModel(()=>this.clockTower(0,0),[0,0,0],landmarks.clocktower,0,[1,.7,1]);
-    let previous=introShot.position;
-    for(const [index,stop]of route.entries()){
-      if(index>0)this.walkCurve([previous,...stop.via,stop.position],index===1?1.75:1.9,stop.surface==='flagstone');
-      previous=stop.position;
-    }
-    for(const stop of route){const [x,,z]=stop.marker;this.box(x,.4,z,1.05,.8,.7,this.m.stone);this.box(x,.83,z,1.15,.08,.8,this.m.stoneLight);}
-    // Background greenery retains the original palette and atmospheric silhouette.
-    for(let i=0;i<35;i++){
-      const a=i/35*Math.PI*2,x=12+Math.cos(a)*92,z=12+Math.sin(a)*92;
-      const field=footprints.find(item=>item.field);
-      if(x>field.minX-10&&x<field.maxX+10&&z>field.minZ-10&&z<field.maxZ+10)continue;
-      this.instance(this.leafGeometry,i%2?this.m.leafDark:this.m.leaf,[x,5,z],[6,5,6]);
-    }
   }
 
   makeMarkers() {
@@ -642,7 +472,7 @@ export class CampusWorld {
     if(!this.calm&&this.mode!=='discover'){target.x+=Math.sin(this.clock*.24)*.035;target.y+=Math.sin(this.clock*.31)*.018;}
     this.camera.lookAt(target);
     if(new URLSearchParams(location.search).has('overhead')) {
-      this.camera.position.set(10,145,15);this.camera.up.set(0,0,-1);this.camera.lookAt(10,0,15);
+      this.camera.position.set(20,300,30);this.camera.up.set(0,0,-1);this.camera.lookAt(20,0,30);
     }
     if(!this.calm){this.animated.forEach((mesh,i)=>{mesh.position.x=Math.sin(this.clock*.65+i*.7)*.045;mesh.position.z=Math.cos(this.clock*.42+i)*.025;});this.clouds.position.x=Math.sin(this.clock*.015)*6;this.motes.position.y=Math.sin(this.clock*.2)*.18;}
     this.markers.forEach(({beacon,diamond,index})=>{if(beacon.visible){beacon.position.y=route[index].marker[1]+.62+(this.calm?0:Math.sin(this.clock*1.7)*.045);diamond.rotation.y=this.calm?0:this.clock*.6;}});
@@ -651,8 +481,18 @@ export class CampusWorld {
     // Keep the sky inside the camera far plane throughout the campus journey.
     // A world-origin dome leaves a clipped black hole when viewed from the field.
     this.sky.position.copy(this.camera.position);
+    // Keep shadow texels fine around the active route as the campus opens out.
+    const sx=this.camera.position.x-this.shadowAnchor.x,sz=this.camera.position.z-this.shadowAnchor.z;
+    if(sx*sx+sz*sz>324){
+      this.shadowAnchor.set(this.camera.position.x,0,this.camera.position.z);
+      this.sun.position.copy(this.shadowAnchor).add(new THREE.Vector3(-64,94,60));
+      this.sun.target.position.copy(this.shadowAnchor);this.sun.target.updateMatrixWorld();
+      this.renderer.shadowMap.needsUpdate=true;
+    }
     this.renderer.render(this.scene,this.camera);
     this.canvas.dataset.frames=String(Number(this.canvas.dataset.frames||0)+1);
     if(this.travel)this.canvas.dataset.traveling='true';else this.canvas.dataset.traveling='false';
   }
 }
+
+Object.assign(CampusWorld.prototype, campusArchitecture);

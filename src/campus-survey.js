@@ -4,7 +4,7 @@ import { mapPoint as p } from './campus-layout.js';
 export const surveyViews = [
   { id:'field-north', clip:'01', seconds:20, point:[795,900], aim:[795,785,2.3], confidence:'medium', description:'Northbound: gym left, basketball lawn right, entrance canopy ahead.' },
   { id:'gym-doors', clip:'02', seconds:4, point:[790,777], aim:[770,777,2.1], confidence:'high', description:'East-facing glazed athletic entrance, seen across covered walk.' },
-  { id:'covered-walk', clip:'03', seconds:4, point:[790,737], aim:[790,600,1.9], confidence:'high', description:'Northbound: athletic wall left, brick posts and planting right.' },
+  { id:'covered-walk', clip:'03', seconds:4, point:[783,737], aim:[783,600,1.9], confidence:'high', description:'Northbound: athletic wall left, brick posts and planting right.' },
   { id:'vsi-turn', clip:'04', seconds:18, point:[785,601], aim:[792,548,2.1], confidence:'medium', description:'North beside VSI west wall; parking left, modern building right.' },
   { id:'vsi-soffit', clip:'04', seconds:28, point:[806,553], aim:[935,553,1.9], confidence:'medium', description:'East under timber soffit; VSI glazing left, low Rotunda wing right.' },
   { id:'vsi-court', clip:'04', seconds:48, point:[895,553], aim:[974,553,2], confidence:'high', description:'East: finned VSI facade left, tables and oak right, dining wall ahead.' },
