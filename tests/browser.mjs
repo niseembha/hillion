@@ -62,6 +62,7 @@ try {
   await page.waitForTimeout(800);
   await page.screenshot({ path:'test-results/03-spotlight-laptop.png', fullPage:true });
   await page.locator('[data-action="reset"]').click();
+  assert.equal(await page.evaluate(()=>window.scrollY),0,'Replay returns to the top of the new case');
   await page.locator('[data-action="start"]').click();
   for (const person of ['Aaron Brooks','Abigail Foster','Adrian Kim']) await choose(person);
   assert.equal(await page.locator('#guess-form').count(),0);
@@ -97,6 +98,7 @@ try {
     await noOverflow();
     await page.locator('[data-action="finish"]').click();
     await page.locator('[data-action="skip"]').click();
+    assert.equal(await page.evaluate(()=>window.scrollY),0,'Spotlight starts at its heading');
     await noOverflow();
     if(width===390){await page.waitForTimeout(800);await page.screenshot({path:'test-results/07-spotlight-mobile.png',fullPage:true});}
   }

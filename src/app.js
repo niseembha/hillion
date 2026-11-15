@@ -22,11 +22,13 @@ const announce = text => { document.querySelector('#announcer').textContent = te
 function dispatch(action) {
   const next = transition(state, action);
   if (next === state) return;
+  const phaseChanged = next.phase !== state.phase;
   lastAction = action.type;
   state = next;
   if (action.type === 'RESET') { selected = null; draft = ''; shareMessage = ''; clearRevealTimers(); }
   if (action.type === 'GUESS') { selected = null; draft = ''; }
   render();
+  if (phaseChanged) window.scrollTo({ top: 0, behavior: 'instant' });
   if (state.phase === 'reveal') startReveal();
   if (action.type === 'START') {
     focusHeading();
