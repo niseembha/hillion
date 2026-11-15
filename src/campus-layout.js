@@ -4,10 +4,10 @@ export const mapPoint = (x, y, height = 1.72) => [(x - 1000) * 0.12, height, (y 
 export const footprints = [
   // Photos show a much wider field and a grass apron before the eastern walkway.
   { name: 'Brinkmann Field', rect: [416.667, 933.333, 750, 1600], field: true },
-  { name: 'Phillips Family Gymnasium', rect: [690, 765, 778, 863] },
+  { name: 'Phillips Family Gymnasium', rect: [610, 640, 778, 890] },
   { name: 'Phillips Family Athletic Center', rect: [650, 640, 775, 745] },
   { name: 'Ginsburg Natatorium', rect: [610, 640, 650, 725] },
-  { name: 'Rotunda', rect: [808, 672, 860, 765] },
+  { name: 'Rotunda', rect: [828, 672, 860, 765] },
   { name: 'Rotunda north wing', rect: [866, 575, 911, 672] },
   { name: 'Levy Middle School', rect: [912, 688, 1030, 736] },
   { name: 'Levy south wing', rect: [912, 736, 958, 816] },

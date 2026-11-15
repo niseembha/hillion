@@ -416,27 +416,61 @@ export class CampusWorld {
       for(const dz of [-6,0,6])this.box(-72-row*.65,(.45+row*.36)/2,z+dz,.08,.45+row*.36,.08,m.frame);
     }
     for(const z of [42,94]){this.column(-77,7,z,.11,14,m.frame);this.box(-77,14,z,.35,.7,2.4,m.metal);}
-    // Gym: raised south-facing entry, glass doors and a shallow barrel roof.
-    const x=-31.9,z=13.7,w=10.56,d=11.76;
-    this.box(x,3.25,z,w,6.5,d,m.brick);
-    const roof=new THREE.Shape();roof.moveTo(-w/2-.4,0);for(let i=0;i<=24;i++){const t=i/24;roof.lineTo((t-.5)*(w+.8),1.7*Math.sin(t*Math.PI));}roof.lineTo(w/2+.4,-.16);roof.lineTo(-w/2-.4,-.16);roof.closePath();
-    const roofMesh=new THREE.Mesh(new THREE.ExtrudeGeometry(roof,{depth:d+.8,bevelEnabled:false}),m.metal);roofMesh.position.set(x,6.5,z-d/2-.4);roofMesh.castShadow=true;roofMesh.receiveShadow=true;this.scene.add(roofMesh);
-    this.box(x,2.2,21.5,10.2,4.4,4,m.brick);
-    this.box(x,2.8,23.54,8.6,2.8,.08,m.glassDark);
-    for(let dx=-4.3;dx<=4.3;dx+=1.075)this.box(x+dx,2.8,23.62,.06,2.9,.08,m.frame);
-    this.box(x,2.4,23.65,8.6,.06,.08,m.metal);
-    this.box(x,4.45,22,11.2,.18,5.5,m.roof);
-    for(let i=0;i<5;i++)this.box(x,.12*(5-i),23.8+i*.48,8.8,.24*(5-i),.5,m.stoneLight);
-    for(const side of [-1,1])this.beam([x+side*4.5,1.9,23.5],[x+side*4.5,.9,26.2],.04,m.frame);
-    this.path(-25.2,27,3.2,8);
-    this.makeBasketballCourt();
-    // Brick arcade on the gym's eastern side, open toward the basketball slab.
-    for(let az=9;az<=21;az+=3){
-      const arch=new THREE.Shape();arch.moveTo(-1.5,0);arch.lineTo(-1.5,2.6);arch.quadraticCurveTo(0,4.4,1.5,2.6);arch.lineTo(1.5,0);arch.lineTo(1.22,0);arch.lineTo(1.22,2.5);arch.quadraticCurveTo(0,4.0,-1.22,2.5);arch.lineTo(-1.22,0);arch.closePath();
-      const mesh=new THREE.Mesh(new THREE.ExtrudeGeometry(arch,{depth:.28,bevelEnabled:false}),m.brick);mesh.position.set(-25.1,0,az);mesh.castShadow=true;mesh.receiveShadow=true;this.scene.add(mesh);
-    }
-    this.box(-25.1,4,15,3.4,.18,16,m.roof);
+    this.makePhillipsGym();
+    this.path(-23.5,27,5.2,9);
+    this.placeModel(()=>this.makeBasketballCourt(),[0,0,0],[2,0,0]);
     for(const z of [15,20])this.tree(-3.5,z,.72);
+  }
+
+  makePhillipsGym() {
+    const m=this.m;
+    // A large athletic hall to the LEFT of the northbound walk. The photo's
+    // east frontage has tall concrete piers, steel braces and full-height doors.
+    const x=-36.7,z=7.8,w=19.8,d=31.6,east=-26.8;
+    this.box(x,4.6,z,w,9.2,d,m.brick);
+    const roof=new THREE.Shape();roof.moveTo(-w/2-.5,-.18);
+    for(let i=0;i<=32;i++){const t=i/32;roof.lineTo((t-.5)*(w+1),2.1*Math.sin(t*Math.PI));}
+    roof.lineTo(w/2+.5,-.18);roof.closePath();
+    const barrel=new THREE.Mesh(new THREE.ExtrudeGeometry(roof,{depth:d+1,bevelEnabled:false}),m.metal);
+    barrel.position.set(x,9.2,z-d/2-.5);barrel.castShadow=true;barrel.receiveShadow=true;this.scene.add(barrel);
+    // Recessed glazing and an entrance canopy on the east facade, facing the player.
+    this.box(east+.1,2.0,17.5,.14,3.8,11.5,m.glassDark);
+    this.box(east+.18,2.0,17.5,.06,3.5,11.1,m.glass);
+    for(let dz=12;dz<=23;dz+=1.1){
+      this.box(east+.23,2,dz,.08,3.8,.055,m.metal);
+      this.box(east+.28,1.65,dz+.22,.045,.45,.025,m.frame);
+    }
+    this.box(east+.24,2.4,17.5,.08,.06,11.5,m.metal);
+    this.box(east+.12,6.5,12,.12,1.4,22,m.glassDark);
+    for(let dz=1;dz<=23;dz+=2)this.box(east+.2,6.5,dz,.09,1.5,.07,m.metal);
+    this.box(-25.6,4.7,17.5,3.1,.25,13,m.roof);
+    this.box(-25.8,.09,17.5,2,.18,13,m.stoneLight);
+    for(const dz of [11,15,19,23]){
+      this.box(-25.95,2.5,dz,.46,5,.52,m.stoneLight);
+      this.beam([-25.9,4.7,dz],[-26.5,6.2,dz],.055,m.metal);
+      this.beam([-25.9,5.2,dz],[-24.2,4.7,dz],.055,m.metal);
+    }
+    // A broad, covered arcade. Each cross-wall has a real arch-shaped opening,
+    // with an opaque brick spandrel above it rather than a thin decorative hoop.
+    const center=-23.5;
+    this.path(center,4,5.3,44);
+    const arch=new THREE.Shape();
+    arch.moveTo(-2.6,0);arch.lineTo(-2.6,4.5);arch.lineTo(2.6,4.5);arch.lineTo(2.6,0);
+    arch.lineTo(2.12,0);arch.lineTo(2.12,2.8);arch.quadraticCurveTo(0,4.15,-2.12,2.8);arch.lineTo(-2.12,0);arch.closePath();
+    const geometry=new THREE.ExtrudeGeometry(arch,{depth:.48,bevelEnabled:true,bevelSize:.025,bevelThickness:.025,bevelSegments:1});
+    for(let az=24;az>=-11;az-=5){
+      const mesh=new THREE.Mesh(geometry,m.brick);mesh.position.set(center,0,az);mesh.castShadow=true;mesh.receiveShadow=true;this.scene.add(mesh);
+    }
+    this.box(center,4.63,3,5.7,.28,42.5,m.roof);
+    // The hall ends in masonry. The right-hand opening leads to the Rosa Valdes court.
+    // Together with the continuous roof this blocks the premature STEM sightline.
+    this.box(center,2.3,-18,5.7,4.6,.5,m.brick);
+    this.path(-18,-16,11,3.4);
+    for(const tz of [17,7,-3]){
+      this.box(-21.8,.78,tz,1.1,.09,1.7,m.green);
+      for(const dx of [-.72,.72])this.box(-21.8+dx,.44,tz,.22,.09,1.7,m.green);
+      for(const dz of [-.6,.6]){this.box(-21.8,.38,tz+dz,.08,.76,.08,m.frame);this.box(-21.8,.2,tz+dz,1.6,.06,.08,m.frame);}
+    }
   }
 
   makeBasketballCourt() {
@@ -475,7 +509,7 @@ export class CampusWorld {
   makeCampus() {
     this.box(12,-.18,14,220,.25,220,this.m.grass);
     for (const building of footprints) {
-      if (building.field || ['STEM + Innovation Center','MPAC','Phillips Family Gymnasium'].includes(building.name)) continue;
+      if (building.field || ['STEM + Innovation Center','MPAC','Phillips Family Gymnasium','Phillips Family Athletic Center','Ginsburg Natatorium'].includes(building.name)) continue;
       const x=(building.minX+building.maxX)/2,z=(building.minZ+building.maxZ)/2;
       const w=building.maxX-building.minX,d=building.maxZ-building.minZ;
       this.placeModel(()=>this.building(0,0,w,d,building.name.includes('Athletic')?7:4.7),[0,0,0],[x,0,z],Math.PI);
@@ -572,7 +606,7 @@ export class CampusWorld {
   moveTo(index) {
     this.stop=index;this.mode='travel';this.markers.forEach(marker=>marker.beacon.visible=false);
     const stop=route[index];const journey=this.move(stop.position,stop.look,stop.via,stop.duration);
-    this.travel.glance=stop.glance;return journey;
+    this.travel.glance=stop.glance;this.travel.followPath=stop.followPath;return journey;
   }
   move(position,look,via,duration) {
     this.cancelTravel();
@@ -613,6 +647,15 @@ export class CampusWorld {
     if(this.travel) {
       const travel=this.travel,t=Math.min(1,(now-travel.started)/travel.duration),s=ease(t);
       if(!this.calm){this.basePosition.copy(travel.curve.getPointAt(s));this.target.lerpVectors(travel.fromLook,travel.toLook,ease(Math.min(1,t*1.5)));bob=Math.sin(t*Math.PI*12)*0.018*Math.sin(t*Math.PI);}
+      if(!this.calm && travel.followPath){
+        const ahead=travel.curve.getPointAt(Math.min(1,s+.045));
+        const forward=ahead.sub(this.basePosition);forward.y=0;
+        if(forward.lengthSq()>.0001){
+          const heading=this.basePosition.clone().add(forward.normalize().multiplyScalar(7));heading.y=1.85;
+          this.target.lerpVectors(travel.fromLook,heading,ease(Math.min(1,t*7)));
+          this.target.lerp(travel.toLook,ease(Math.max(0,(t-.84)/.16)));
+        }
+      }
       if(!this.calm && travel.glance){const g=travel.glance,u=(t-g.start)/(g.end-g.start);if(u>0&&u<1)this.target.lerp(v(g.target),Math.sin(Math.PI*u)**2*g.strength);}
       this.onProgress(t);if(t>=1)this.finishTravel();
     }
