@@ -59,3 +59,9 @@ The checks cover real WebGL rendering, guided movement and in-world markers, all
 One fixed fictional mystery with no persistence or daily rotation. Content is bundled in the browser. This stylized set emphasizes recognizable architectural features and a guided route rather than exact campus dimensions; there are no characters, live campus activity, or audio. WebGL2 is required, with a recovery message if it is unavailable or its context is lost.
 
 Next, playtest travel length, clue framing, and the sense of place on the actual school laptops. Use that feedback to refine the route, foliage, and architectural detail before adding real, voluntarily submitted senior content.
+
+### Map-aligned geography update
+
+`src/campus-layout.js` records the principal building footprints from `references/map-and-route.pdf` (the annotated 2026–27 map). Coordinates use east = +X, north = −Z, with a common 0.12-unit-per-rendered-map-pixel scale. The seven stops trace Brinkmann Field → west of Phillips Gymnasium/Rotunda → south of STEM → Briggs Clocktower → eastern Foote Quadrangle → north of Fulton, below Korenvaes → west of MPAC. Existing STEM, timber/glass, limestone seating, clocktower, material, and vegetation geometry is reused through model transforms.
+
+`?overhead` enables a development-only top-down camera with red markers and the route line for comparison with the PDF. Normal play has no map controls. Geography tests sample 401 points along every smoothed route segment against mapped building bounds. Building footprints and facades remain simplified, travel time is compressed, and off-route campus areas are intentionally omitted. Early correct guesses open the same yearbook at the current clue location without completing the remaining route.

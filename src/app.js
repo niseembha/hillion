@@ -48,7 +48,7 @@ function render() {
     footer.innerHTML = view === 'travel' ? `<div class="travel-status"><span class="walking-dots"><i></i><i></i><i></i></span><span>Following the story</span><div class="travel-progress"><i id="travel-fill"></i></div></div><button class="quiet-button arrival-button" data-action="arrive">Arrive now ${arrow}</button>` : `<button class="collected-button" data-action="history"><span>▤</span> Collected notes <b>${readCount}</b></button><span class="demo-caption">FICTIONAL MYSTERY / NO. ${mystery.number}</span>`;
   }
   if (view === 'intro') {
-    app.innerHTML = `<section class="intro-screen"><div class="intro-edition"><span class="sun-symbol">✳</span> A GREENHILL CAMPUS MYSTERY <i></i> NO. ${mystery.number}</div><h1 tabindex="-1">A familiar place.<br><em>A hidden story.</em></h1><p>Seven clues. One Greenhill senior.</p><button class="primary-button start-button" data-action="start">Start today’s mystery ${arrow}</button><span class="intro-footnote">FOLLOW THE CLUES. FIND YOUR PERSON.</span></section><div class="intro-world-caption"><span class="small-compass">N <i>✧</i></span><span>THE COURTYARD<br><b>GREENHILL, REIMAGINED</b></span></div>`;
+    app.innerHTML = `<section class="intro-screen"><div class="intro-edition"><span class="sun-symbol">✳</span> A GREENHILL CAMPUS MYSTERY <i></i> NO. ${mystery.number}</div><h1 tabindex="-1">A familiar place.<br><em>A hidden story.</em></h1><p>Seven clues. One Greenhill senior.</p><button class="primary-button start-button" data-action="start">Start today’s mystery ${arrow}</button><span class="intro-footnote">FOLLOW THE CLUES. FIND YOUR PERSON.</span></section><div class="intro-world-caption"><span class="small-compass">N <i>✧</i></span><span>BRINKMANN FIELD<br><b>GREENHILL, REIMAGINED</b></span></div>`;
   } else if (view === 'travel') {
     app.innerHTML = `<div class="journey-indicator" aria-label="Traveling to ${esc(route[state.clues - 1].name)}"><span class="crosshair"></span></div>`;
   } else if (view === 'discover') {
@@ -196,6 +196,7 @@ async function boot() {
       onProgress: progress => { const fill = document.querySelector('#travel-fill'); if (fill) fill.style.transform = `scaleX(${progress})`; },
       onError: showWorldError
     });
+    if (new URLSearchParams(window.location.search).has('overhead')) window.__campus = world;
     world.setCalm(calm); updateMotionButtons(); setView('intro');
   } catch (error) { console.error(error); showWorldError(error); }
 }

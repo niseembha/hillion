@@ -1,5 +1,6 @@
 import * as THREE from '/vendor/three.module.js';
 import { route, introShot, revealShot } from './route.js';
+import { footprints, mapPoint } from './campus-layout.js';
 
 const v = values => new THREE.Vector3(...values);
 const ease = t => t * t * (3 - 2 * t);
@@ -42,6 +43,12 @@ export class CampusWorld {
     this.makeCampus();
     this.flushBatches();
     this.makeMarkers();
+    if(new URLSearchParams(location.search).has('overhead')) {
+      this.scene.fog=null;
+      const points=[introShot.position,...route.flatMap(stop=>[...stop.via,stop.position])].map(point=>new THREE.Vector3(point[0],.3,point[2]));
+      this.scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0x202020})));
+      route.forEach(stop=>{const dot=new THREE.Mesh(new THREE.SphereGeometry(.65),new THREE.MeshBasicMaterial({color:0xff2929}));dot.position.set(stop.marker[0],1,stop.marker[2]);this.scene.add(dot);});
+    }
     this.makeYearbook();
     this.makeMotes();
     this.resize = this.resize.bind(this);
@@ -248,11 +255,7 @@ export class CampusWorld {
     }
     this.box(-1.3, 0.33, 7.2, 2.8, 0.66, 0.8, this.m.stone);
     this.box(-1.3, 0.7, 7.2, 2.9, 0.1, 0.93, this.m.stoneLight);
-    this.path(0, 25, 5.4, 30);
-    this.path(13.5, 10, 4.2, 10);
-    this.path(18, 0, 4.4, 25);
-    this.path(-14.9, -0.5, 3.2, 27);
-    this.clockTower(-15.7, -8.6);
+
   }
 
   clockTower(x, z) {
@@ -299,7 +302,7 @@ export class CampusWorld {
     this.box(23.8, 0.4, -13, 2.5, 0.8, 0.9, this.m.stone);
     this.box(23.8, 0.84, -13, 2.6, 0.12, 1.1, this.m.woodLight);
     this.tree(22, -21, 0.72); this.tree(21.5, 1, 0.82);
-    this.building(23, -36, 18, 9, 5.2);
+
   }
 
   makeBreezeway() {
@@ -392,15 +395,55 @@ export class CampusWorld {
     this.building(4, 47, 32, 9, 4.5);
   }
 
+  // Reuse complete architectural models, including their detail and materials.
+  placeModel(build, source, destination, rotation = 0, scale = [1,1,1]) {
+    const counts = new Map([...this.batches].map(([key,batch]) => [key,batch.matrices.length]));
+    const previous = new Set(this.scene.children);
+    const transform = new THREE.Matrix4().makeTranslation(...destination)
+      .multiply(new THREE.Matrix4().makeRotationY(rotation))
+      .multiply(new THREE.Matrix4().makeScale(...scale))
+      .multiply(new THREE.Matrix4().makeTranslation(-source[0],-source[1],-source[2]));
+    build();
+    for (const [key,batch] of this.batches) for(let i=counts.get(key)||0;i<batch.matrices.length;i++) batch.matrices[i].premultiply(transform);
+    for (const child of this.scene.children) if(!previous.has(child)) child.applyMatrix4(transform);
+  }
+
   makeCampus() {
-    this.box(0, -0.18, 0, 220, 0.25, 220, this.m.grass);
-    this.makeAmphitheater(); this.makeGlassCourt(); this.makeBreezeway(); this.makeGrove(); this.makeGatheringStones(); this.makeAtrium(); this.makeFinalCourt();
-    this.building(-8, -47, 36, 10, 5);
-    for (const [x, z, size] of [[-11,25,0.9],[12,19,0.95],[8,-17,0.9],[-2,-39,0.85],[39,7,1.2],[34,21,1.1],[25,37,1.2],[-42,25,1.2],[-40,-36,1.1],[46,-28,1.1],[-7,-53,1],[14,-50,1],[49,31,1.2],[-38,45,1.1],[28,-52,1.3],[-53,-12,1.2],[-47,1,1.3]]) this.tree(x,z,size);
-    this.planter(5.5,24,2.5,1.6,true); this.planter(-5,13,3,1.5,true);
-    this.bench(10,10,-0.55); this.bench(-12,12,0.5);
-    // Distant greenery gives the small set a complete horizon.
-    for (let i=0;i<35;i++) { const a=i/35*Math.PI*2; this.instance(this.leafGeometry,i%2?this.m.leafDark:this.m.leaf,[Math.cos(a)*76,4+this.random()*3,Math.sin(a)*76],[5+this.random()*4,5,5+this.random()*3]); }
+    this.box(12,-.18,14,220,.25,220,this.m.grass);
+    for (const building of footprints) {
+      if (building.field || ['STEM + Innovation Center','MPAC'].includes(building.name)) continue;
+      const x=(building.minX+building.maxX)/2,z=(building.minZ+building.maxZ)/2;
+      const w=building.maxX-building.minX,d=building.maxZ-building.minZ;
+      this.placeModel(()=>this.building(0,0,w,d,building.name.includes('Athletic')?7:4.7),[0,0,0],[x,0,z],Math.PI);
+      if(building.name.includes('Upper School')) for(let wz=building.minZ+1;wz<building.maxZ-.5;wz+=1.8){
+        this.box(building.minX-.04,2,wz,.1,2.5,1.3,this.m.frame);
+        this.box(building.minX-.1,2,wz,.035,2.25,1.12,this.m.glassDark);
+        this.box(building.minX-.13,2,wz,.04,.055,1.12,this.m.metal);
+      }
+    }
+    this.placeModel(()=>this.makeGlassCourt(),[32.5,0,-14],[-14,0,-25],Math.PI/2,[.9,1,.85]);
+    this.placeModel(()=>this.makeAtrium(),[-22.3,0,23.5],[67,0,-7],Math.PI/2,[.65,1,.8]);
+    this.placeModel(()=>this.makeAmphitheater(),[0,0,6.2],[7,0,-8.1],Math.PI,[.44,.7,.44]);
+    this.clockTower(-3.6,-8.4);
+    // The field remains west of its east-edge path, south of the gyms.
+    const field=footprints.find(item=>item.field);
+    const cx=(field.minX+field.maxX)/2,cz=(field.minZ+field.maxZ)/2;
+    this.box(cx,0,cz,field.maxX-field.minX,.04,field.maxZ-field.minZ,this.m.lawn);
+    for(let z=field.minZ+1;z<field.maxZ;z+=3.5)this.box(cx,.03,z,field.maxX-field.minX-.6,.025,.06,this.m.white);
+    for(const z of [field.minZ+1,field.maxZ-1]) {this.column(cx-2,2,z,.055,4,this.m.white);this.column(cx+2,2,z,.055,4,this.m.white);this.box(cx,4,z,4.1,.09,.09,this.m.white);}
+    // Continuous paths follow the black annotation; no parking arrows are used.
+    let previous=introShot.position;
+    for(const stop of route) for(const point of [...stop.via,stop.position]) {
+      const dx=point[0]-previous[0],dz=point[2]-previous[2],length=Math.hypot(dx,dz);
+      this.box((point[0]+previous[0])/2,.025,(point[2]+previous[2])/2,2.7,.07,length+.2,this.m.path,Math.atan2(dx,dz));
+      previous=point;
+    }
+    for(const stop of route){const [x,,z]=stop.marker;this.box(x,.4,z,1.5,.8,.95,this.m.stone);this.box(x,.83,z,1.65,.08,1.08,this.m.stoneLight);}
+    for(const [x,z,size] of [[-18,33,.8],[-30,24,.9],[-18,14,.8],[-32,-14,.85],[-9,-38,.8],[1,-2,.9],[12,-2,.9],[19,-19,.8],[22,-26,.8],[47,-22,.85],[49,-2,.9],[62,6,.85],[80,-13,1],[-39,39,.9]])this.tree(x,z,size);
+    for(const [x,z] of [[-18,26],[10,-3],[46,-23],[51,-5]])this.planter(x,z,2.3,1.5,true);
+    this.bench(11,-4);this.bench(45,-24);
+    // Curated reveal still uses the same yearbook; it can now happen at any stop.
+    for(let i=0;i<35;i++){const a=i/35*Math.PI*2;this.instance(this.leafGeometry,i%2?this.m.leafDark:this.m.leaf,[12+Math.cos(a)*92,5,12+Math.sin(a)*92],[6,5,6]);}
   }
 
   makeMarkers() {
@@ -418,14 +461,14 @@ export class CampusWorld {
   }
 
   makeYearbook() {
-    this.book = new THREE.Group(); this.book.position.set(2,1.16,33.8);
+    this.book = new THREE.Group(); this.book.position.copy(v(route[6].marker)); this.book.position.y=1.16;
     const back = new THREE.Mesh(new THREE.BoxGeometry(1.0,1.35,0.1),this.m.paper); back.position.set(0,0.67,0); back.castShadow=true; this.book.add(back);
     this.cover = new THREE.Group(); this.cover.position.set(-0.51,0,0.08);
     const coverMesh = new THREE.Mesh(new THREE.BoxGeometry(1.04,1.41,0.065),this.m.green); coverMesh.position.set(0.52,0.67,0); coverMesh.castShadow=true; this.cover.add(coverMesh);
     const border = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(0.87,1.22,0.07)),new THREE.LineBasicMaterial({color:'#d9b75e'}));border.position.set(0.52,0.67,0.005);this.cover.add(border);
     const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.13),this.m.gold);star.position.set(0.52,0.82,0.05);star.scale.z=0.25;this.cover.add(star);
     this.book.add(this.cover);
-    this.book.rotation.y=Math.PI; // The standing cover faces the approach from the north.
+    this.book.rotation.y=-Math.PI/2; // The standing cover faces the approach from the north.
     this.scene.add(this.book);
     this.portrait = null; this.bookOpening = -1;
   }
@@ -480,9 +523,12 @@ export class CampusWorld {
   inspect(index) { this.mode='clue';this.markers[index].beacon.visible=false; }
   async toReveal() {
     this.mode='reveal';this.markers.forEach(marker=>marker.beacon.visible=false);
-    const x=this.basePosition.x,z=this.basePosition.z;
-    const via=x<-13&&z>=12?[[-20,1.72,10],[-11.5,1.72,10],[-7,1.72,24]]:z<12?(x<0?[[-16,1.72,-12],[-16,1.72,7],[-10,1.72,20]]:[[17,1.72,6],[13,1.72,20]]):[];
-    return this.move(revealShot.position,revealShot.look,via,3200);
+    const marker=route[Math.max(0,this.stop)].marker;
+    this.book.position.set(marker[0],1.16,marker[2]);
+    const direction=new THREE.Vector3(marker[0]-this.basePosition.x,0,marker[2]-this.basePosition.z).normalize();
+    this.book.rotation.y=Math.atan2(-direction.x,-direction.z);
+    const destination=[marker[0]-direction.x*4,1.75,marker[2]-direction.z*4];
+    return this.move(destination,[marker[0],1.75,marker[2]],[],1800);
   }
   spotlight() { this.mode='spotlight'; }
   reset() {
@@ -504,8 +550,11 @@ export class CampusWorld {
     }
     this.camera.position.copy(this.basePosition);this.camera.position.y+=bob;
     const target=this.target.clone();
-    if(!this.calm){target.x+=Math.sin(this.clock*.24)*.035;target.y+=Math.sin(this.clock*.31)*.018;}
+    if(!this.calm&&this.mode!=='discover'){target.x+=Math.sin(this.clock*.24)*.035;target.y+=Math.sin(this.clock*.31)*.018;}
     this.camera.lookAt(target);
+    if(new URLSearchParams(location.search).has('overhead')) {
+      this.camera.position.set(10,145,15);this.camera.up.set(0,0,-1);this.camera.lookAt(10,0,15);
+    }
     if(!this.calm){this.animated.forEach((mesh,i)=>{mesh.position.x=Math.sin(this.clock*.65+i*.7)*.045;mesh.position.z=Math.cos(this.clock*.42+i)*.025;});this.clouds.position.x=Math.sin(this.clock*.015)*6;this.motes.position.y=Math.sin(this.clock*.2)*.18;}
     this.markers.forEach(({beacon,diamond,index})=>{if(beacon.visible){beacon.position.y=route[index].marker[1]+.62+(this.calm?0:Math.sin(this.clock*1.7)*.045);diamond.rotation.y=this.calm?0:this.clock*.6;}});
     if(this.bookOpening>=0){const t=this.calm?1:Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=-ease(t)*Math.PI*.82;}
