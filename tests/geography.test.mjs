@@ -20,13 +20,19 @@ test('sampled walking curves clear mapped building footprints with a pedestrian 
  previous=stop.position;
  }
 });
-test('opening is on a broad football field with a grass buffer before the walkway',()=>{
- const field=footprints.find(item=>item.field);
- assert.ok(field.maxX-field.minX>=39.9&&field.maxZ-field.minZ>=79.9);
- for(const point of [introShot.position,route[0].position]){
-  assert.ok(point[0]>field.minX+5&&point[0]<field.maxX-5);
-  assert.ok(point[2]>field.minZ+5&&point[2]<field.maxZ-5);
- }
- assert.ok(route[1].position[0]-field.maxX>4);
- assert.ok(route[1].glance.target[0]>route[1].via.at(-1)[0], 'Court is east/right of the northbound approach');
+test('field, gym and basketball slab keep the map relationships visible in clip 01',()=>{
+ const find=n=>footprints.find(b=>b.name===n),field=find('Brinkmann Field'),gym=find('Phillips Family Gymnasium');
+ assert.ok(field.maxZ>gym.maxZ&&field.minZ>gym.maxZ,'Field is south of the gym');
+ assert.ok(field.maxX>gym.maxX,'Field eastern sideline extends beyond the gym east facade');
+ assert.ok(introShot.position[0]>=field.maxX&&introShot.position[2]>field.minZ,'Opening is at the eastern sideline');
+ assert.ok(introShot.look[0]<introShot.position[0],'Footage opens looking west across the field');
+ assert.ok(route[1].position[0]>gym.maxX,'Northbound gym approach is east of the gym');
+ assert.ok(route[1].glance.target[0]>route[1].position[0],'Basketball slab is right/east of the northbound path');
+});
+test('VSI route approaches on the west then passes east under its southwest leg',()=>{
+ const vsi=footprints.find(b=>b.name==='STEM + Innovation Center');
+ const points=route[2].via;
+ assert.ok(points.slice(0,6).every(p=>p[0]<vsi.minX));
+ assert.ok(points.at(-1)[0]>vsi.minX&&route[2].position[2]>vsi.maxZ);
+ assert.ok(route[2].position[0]<route[3].position[0]);
 });

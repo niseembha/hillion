@@ -354,7 +354,7 @@ async function boot() {
       },
       onError: showWorldError,
     });
-    if (new URLSearchParams(window.location.search).has("overhead"))
+    if (["overhead", "survey"].some(key => new URLSearchParams(window.location.search).has(key)))
       window.__campus = world;
     world.setCalm(calm);
     updateMotionButtons();

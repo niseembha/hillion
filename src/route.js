@@ -1,14 +1,14 @@
 import { mapPoint as p } from './campus-layout.js';
-// Seven red marker centers and the intervening black path on the annotated PDF.
-// Stops sit slightly before each envelope; all travel remains at eye height.
+// Map fixes placement; source-local clip timestamps establish turns and views.
+// See docs/campus-route-reconstruction.md for registration uncertainty.
 export const route = [
-  { name: 'Brinkmann Field', subtitle: 'From the turf to the heart of campus', object: 'A note out on the field', position: [-44,1.72,65], marker:[-42.5,.91,61.5], look:[-40,1.5,55], via:[[-45,1.72,83],[-44,1.72,74]], duration:4200 },
-  { name: 'Phillips Gymnasium / Rotunda', subtitle: 'The gym on your left, the arches ahead', object: 'An envelope beside the glass gym doors', position:[-23.5,1.72,26], marker:[-25.7,.91,21.5], look:[-24.7,2.1,16], via:[[-39,1.72,49],[-31,1.72,34],[-24,1.72,30],[-23.5,1.72,28]], glance:{target:[-13.5,2,20],start:.52,end:.89,strength:.65}, duration:7800 },
-  { name: 'STEM + Innovation Center', subtitle: 'Through the arches, then right', object: 'A note outside Rosa Valdes', position:[-6.8,1.72,-12.5], marker:[-10,.91,-18.8], look:[-13,4.8,-24], via:[[-23.5,1.72,17],[-23.5,1.72,5],[-23.5,1.72,-7],[-23.5,1.72,-11],[-22.8,1.72,-14],[-20,1.72,-16],[-15,1.72,-17],[-10,1.72,-16.5],[-7,1.72,-14]], followPath:true, duration:8500 },
-  { name: 'Briggs Clocktower', subtitle: 'Into the heart of campus', object: 'An envelope beneath the clocktower', position:p(947,590), marker:p(962,589,.91), look:p(967,610,3.8), via:[[-8.6,1.72,-13.5]], duration:4600 },
-  { name: 'Eastern Foote Quadrangle', subtitle: 'Across the quadrangle', object: 'A note on the courtyard limestone', position:p(1117,627), marker:p(1150,614,.91), look:p(1160,607,1.5), via:[p(976,608),p(1014,628),p(1070,637)], duration:4400 },
-  { name: 'Fulton Upper School', subtitle: 'Between Fulton and Korenvaes', object: 'An envelope on the north walkway', position:p(1248,501), marker:p(1281,497,.91), look:p(1281,510,1.6), via:[p(1156,599),p(1180,554),p(1215,518)], duration:4900 },
-  { name: 'Marshall Performing Arts Center', subtitle: 'The final approach', object: 'One last envelope at MPAC', position:p(1438,587), marker:p(1470,605,.91), look:p(1490,619,2.3), via:[p(1310,501),p(1345,513),p(1390,549)], duration:5000 }
+  { name:'Brinkmann Field', subtitle:'From the sideline toward campus', object:'A note beside the field', position:p(798,1067), marker:p(788,1040,.91), look:p(789,980,2), via:[p(800,1090),p(798,1080)], duration:4200, followPath:true },
+  { name:'Phillips Gymnasium / Rotunda', subtitle:'The gym on your left, the covered walk ahead', object:'An envelope beside the glass gym doors', position:p(790,777), marker:p(778,777,.91), look:p(769,777,2), via:[p(798,1000),p(798,946),p(795,915),p(790,878),p(790,821),p(790,792)], glance:{target:p(850,861,2),start:.32,end:.52,strength:.5}, duration:9000, followPath:true },
+  { name:'STEM + Innovation Center', subtitle:'North along the covered walk, then east beneath VSI', object:'A note beside the VSI courtyard', position:p(862,558), marker:p(881,550,.91), look:p(908,539,3), via:[p(790,744),p(790,695),p(789,657),p(785,621),p(785,585),p(785,565),p(798,553),p(825,553),p(845,554)], followPath:true, duration:11000 },
+  { name:'Briggs Clocktower', subtitle:'Around the oak into Foote Quadrangle', object:'An envelope near the clocktower', position:p(947,590), marker:p(962,601,.91), look:p(987,624,3), via:[p(891,553),p(922,553),p(938,561),p(946,575)], followPath:true, duration:5200 },
+  { name:'Eastern Foote Quadrangle', subtitle:'Follow the flagstone walk east', object:'A note on the courtyard limestone', position:p(1124,627), marker:p(1150,614,.91), look:p(1175,607,2), via:[p(976,612),p(1016,620),p(1040,633),p(1070,637),p(1104,634)], followPath:true, surface:'flagstone', duration:6000 },
+  { name:'Fulton Upper School', subtitle:'Through the shaded Upper School courtyards', object:'An envelope on the covered courtyard walk', position:p(1271,499), marker:p(1291,501,.91), look:p(1320,501,2), via:[p(1154,610),p(1166,583),p(1167,550),p(1193,521),p(1220,503),p(1245,499)], followPath:true, duration:7000 },
+  { name:'Marshall Performing Arts Center', subtitle:'Across the lawn to the limestone overhang', object:'One last envelope at MPAC', position:p(1492,606), marker:p(1501,615,.91), look:p(1515,628,2.5), via:[p(1308,499),p(1338,507),p(1370,534),p(1410,557),p(1452,581),p(1478,593)], followPath:true, duration:7400 }
 ];
-export const introShot = {position:[-46,1.9,92],look:[-32,3.2,22]};
-export const revealShot = {position:p(1435,605,1.75),look:p(1470,605,1.75)};
+export const introShot = {position:p(800,1100),look:p(708,1085,2)};
+export const revealShot = {position:p(1490,606,1.75),look:p(1501,615,1.75)};
