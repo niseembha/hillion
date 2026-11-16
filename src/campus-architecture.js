@@ -187,7 +187,6 @@ export const campusArchitecture = {
     this.coveredWalk([775,585,793,633],3.15,'z',true,true);
     // Low planting border outside the arcade; keep its centre free for people.
     this.mapBox([794,645,802,754],-.01,.035,m.soil);
-    for(let my=650;my<755;my+=8){const pt=p(798,my,0);this.instance(this.leafGeometry,m.leafLight,[pt[0],.3,pt[2]],[.48,.3,.65]);}
   },
 
   makeVSI() {
@@ -197,18 +196,27 @@ export const campusArchitecture = {
     this.masonryBlock([794,570,819,632],0,8.3,m.plaster);
     this.masonryBlock([794,545,832,570],4.05,4.25,m.plaster);
     // Smooth, continuous timber soffit with fine planks and inset linear lights.
+    this.mapBox([789,545,835,570],.015,.07,m.path);
     this.mapBox([789,545,835,570],3.86,.12,m.soffit);
+    const support=p(833,568,0);this.box(support[0],1.91,support[2],.24,3.82,.24,m.plaster);
     for(let my=546;my<570;my+=.8)this.mapBox([789,my,835,my+.055],3.793,.006,m.woodLight);
     for(const mx of [800,818])this.mapBox([mx,550,mx+.28,563],3.788,.008,m.white);
     const z=p(0,545,0)[2],start=p(833,0,0)[0],end=p(960,0,0)[0];
     for(let wx=start;wx<end-.3;wx+=1.7){
       const width=Math.min(1.67,end-wx);
-      this.box(wx+width/2,1.9,z-.52,width,3.8,.05,m.windowBack);
       this.box(wx+width/2,1.9,z+.025,width,3.8,.025,m.glass);
       this.box(wx,1.9,z+.08,.045,3.8,.08,m.silver);
       this.box(wx+width/2,2.8,z+.07,width,.045,.08,m.silver);
     }
     this.box((start+end)/2,.12,z+.05,end-start,.18,.12,m.silver);
+    // Close the curtain-wall room at its return and rear wall. Separate exposed
+    // backing panels used to look like freestanding green cards from the passage.
+    this.box((start+end)/2,1.9,z-3.10,end-start,3.8,.05,m.windowBack);
+    this.box((start+end)/2,.04,z-1.55,end-start,.08,3.15,m.stoneLight);
+    this.box(start,1.9,z-1.55,.025,3.8,3.15,m.glass);
+    for(const dz of [0,-1.55,-3.1])this.box(start-.04,1.9,z+dz,.07,3.8,.06,m.silver);
+    for(const mx of [854,891,927]){const q=p(mx,541,0);this.box(q[0],.76,q[2],1.5,.10,.7,m.woodLight);for(const dx of [-.55,.55])this.box(q[0]+dx,.37,q[2],.06,.74,.5,m.frame);}
+
     // Upper horizontal brise-soleil is a fine, shallow silver band, not a giant grille.
     for(let y=3.98;y<5.5;y+=.17)this.mapBox([831,545,962,546.3],y,.065,m.silver);
     for(let mx=839;mx<958;mx+=17){
@@ -228,7 +236,6 @@ export const campusArchitecture = {
     // stop at the end of the VSI facade and become an intervening grass strip.
     this.mapBox([831,547,999,575],-.015,.07,m.path);
     this.mapBox([834,545.6,940,548.2],.015,.04,m.soil);
-    for(let mx=837;mx<940;mx+=5){const pt=p(mx,547,0);this.instance(this.leafGeometry,m.leafLight,[pt[0],.22,pt[2]],[.48,.24,.38]);}
     for(const [mx,my]of [[857,570],[889,570],[924,570]])this.picnicTable(mx,my);
     for(const mx of [847,919]){const pt=p(mx,572,0);this.tree(pt[0],pt[2],.52);}
     for(const rect of [[797,545,824,547],[797,566,824,568]])this.masonryBlock(rect,0,.48,m.limestone);
@@ -273,7 +280,7 @@ export const campusArchitecture = {
     for(const my of [593,633])this.mapBox([1476.3,my,1478,my+1],7.4,4.0,m.limestone);
     this.sign('MARSHALL FAMILY PERFORMING ARTS CENTER',west-.03,4.43,p(0,645,0)[2],14,.32,-Math.PI/2,null,'36px sans-serif');
     for(const mx of [1487,1496])for(let my=612;my<697;my+=17){const pt=p(mx,my,0);this.box(pt[0],4.185,pt[2],.065,.012,.065,m.white);}
-    for(const [mx,my]of [[1450,626],[1461,643],[1470,666],[1454,672]]){const pt=p(mx,my,0);this.bench(pt[0],pt[2],Math.PI/2,1);}
+
     this.masonryBlock([1497,624,1505,644],0,.38,m.limestone);
     for(let i=0;i<34;i++){
       const pt=p(1498+this.random()*6,625+this.random()*18,0);
@@ -331,9 +338,6 @@ export const campusArchitecture = {
       previous=stop.position;
     }
     for(const stop of route){const [x,,z]=stop.marker;this.box(x,.4,z,1.05,.8,.7,this.m.stone);this.box(x,.83,z,1.15,.08,.8,this.m.stoneLight);}
-    for(let i=0;i<44;i++){
-      const a=i/44*Math.PI*2,x=25+Math.cos(a)*187,z=20+Math.sin(a)*187;
-      this.instance(this.leafGeometry,i%2?this.m.leafDark:this.m.leaf,[x,5,z],[7,6,7]);
-    }
+
   }
 };

@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { CatmullRomCurve3, Vector3 } from 'three';
-import { footprints } from '../src/campus-layout.js';
+import { footprints, landmarks, mapPoint } from '../src/campus-layout.js';
 import { route, introShot } from '../src/route.js';
 test('the marked route runs north from Brinkmann, then east through the academic campus',()=>{
  assert.equal(route.length,7);
@@ -27,7 +27,7 @@ test('field, gym and basketball slab keep the map relationships visible in clip 
  assert.ok(introShot.position[0]>=field.maxX&&introShot.position[2]>field.minZ,'Opening is at the eastern sideline');
  assert.ok(introShot.look[0]<introShot.position[0],'Footage opens looking west across the field');
  assert.ok(route[1].position[0]>gym.maxX,'Northbound gym approach is east of the gym');
- assert.ok(route[1].glance.target[0]>route[1].position[0],'Basketball slab is right/east of the northbound path');
+ assert.ok(mapPoint(landmarks.basketball[0],0)[0]>route[1].position[0],'Basketball slab is right/east of the northbound path');
 });
 test('VSI route approaches on the west then passes east under its southwest leg',()=>{
  const vsi=footprints.find(b=>b.name==='STEM + Innovation Center');

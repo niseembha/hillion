@@ -2,6 +2,8 @@ import * as THREE from '/vendor/three.module.js';
 import { route, introShot, revealShot } from './route.js';
 import { footprints, mapPoint, landmarks, MAP_SCALE } from './campus-layout.js';
 
+import { departureWaypoints, notePose, walkingProgress, walkingTarget, walkDuration, TURN_RATE, smooth } from './camera-motion.js';
+import { campusDetail } from './campus-detail.js';
 import { campusArchitecture } from './campus-architecture.js';
 
 const v = values => new THREE.Vector3(...values);
@@ -43,6 +45,7 @@ export class CampusWorld {
     this.makeSky();
     this.makeLighting();
     this.makeCampus();
+    this.makeEnvironment();
     this.flushBatches();
     this.makeMarkers();
     if(new URLSearchParams(location.search).has('overhead')) {
@@ -65,6 +68,7 @@ export class CampusWorld {
       onError(new Error('The 3D connection was interrupted. Reload to return to campus.'));
     });
     this.resize();
+    this.camera.lookAt(this.target);
     this.animate(performance.now());
     canvas.dataset.ready = 'true';
   }
@@ -113,6 +117,7 @@ export class CampusWorld {
       leafLight: this.material('#9bb169', { flatShading: true }),
       leafDark: this.material('#496f43', { flatShading: true }),
       soil: this.material('#858269'),
+      mulch: this.material('#796c52'),
       green: this.material('#28563e'),
       gold: this.material('#dbb55e', { metalness: 0.55, roughness: 0.32 }),
       paper: this.material('#fff3d4'),
@@ -189,33 +194,6 @@ export class CampusWorld {
     for (let ix = 0; ix < nx; ix++) for (let iz = 0; iz < nz; iz++) {
       this.box(x - width / 2 + (ix + 0.5) * width / nx, 0.034, z - depth / 2 + (iz + 0.5) * depth / nz,
         width / nx - 0.035, 0.025, depth / nz - 0.035, this.random() > 0.8 ? this.m.pathAlt : this.m.path);
-    }
-  }
-
-  tree(x, z, size = 1) {
-    const trunkHeight = 4.2 * size;
-    this.column(x, trunkHeight / 2, z, 0.27 * size, trunkHeight, this.m.trunk);
-    for (let b = 0; b < 4; b++) {
-      const angle = b * 1.65 + this.random() * 0.4;
-      const end = [x + Math.cos(angle) * 2 * size, (5.6 + this.random()) * size, z + Math.sin(angle) * 2 * size];
-      this.beam([x, 2.7 * size, z], end, 0.13 * size, this.m.trunk);
-    }
-    for (let i = 0; i < 11; i++) {
-      const angle = i * 2.399, spread = Math.sqrt(i / 11) * 3.5 * size;
-      const height = (6.8 + (1 - i / 11) * 2 + this.random() * 0.7) * size;
-      this.instance(this.leafGeometry, [this.m.leaf, this.m.leafLight, this.m.leafDark][i % 3], [x + Math.cos(angle) * spread, height, z + Math.sin(angle) * spread], [2.1 * size, (1.4 + this.random() * 0.5) * size, 2.2 * size], [this.random(), this.random(), this.random()]);
-    }
-    const shadow = new THREE.Mesh(new THREE.CircleGeometry(4.5 * size, 24), this.m.shadow); shadow.rotation.x = -Math.PI / 2; shadow.position.set(x, 0.045, z); this.scene.add(shadow);
-    this.column(x, 0.01, z, 1.1 * size, 0.06, this.m.soil);
-  }
-
-  planter(x, z, w = 3, d = 2, flowers = false) {
-    this.box(x, 0.23, z, w, 0.46, d, this.m.stone);
-    this.box(x, 0.47, z, w - 0.16, 0.04, d - 0.16, this.m.soil);
-    for (let i = 0; i < 13; i++) {
-      const px = x + (this.random() - 0.5) * (w - 0.3), pz = z + (this.random() - 0.5) * (d - 0.3);
-      this.instance(this.leafGeometry, i % 2 ? this.m.leaf : this.m.leafDark, [px, 0.68 + this.random() * 0.15, pz], [0.28, 0.34, 0.28]);
-      if (flowers && i % 2) this.instance(this.leafGeometry, this.m.flower, [px, 1.04, pz], [0.095, 0.07, 0.095]);
     }
   }
 
@@ -311,13 +289,33 @@ export class CampusWorld {
     }
     const geometry=new THREE.BufferGeometry();geometry.setAttribute('position',new THREE.Float32BufferAttribute(positions,3));geometry.setIndex(indices);geometry.computeVertexNormals();
     const mesh=new THREE.Mesh(geometry,flagstone?this.m.soil:this.m.path);mesh.receiveShadow=true;this.scene.add(mesh);
-    if(flagstone)for(let i=0;i<steps;i++){
-      const point=curve.getPointAt((i+.5)/steps),tangent=curve.getTangentAt((i+.5)/steps);
-      const side=new THREE.Vector3(-tangent.z,0,tangent.x).normalize();
-      for(const offset of [-.65,0,.65]){
-        const shape=new THREE.CircleGeometry(.39+this.random()*.04,5);shape.rotateX(-Math.PI/2);
-        this.instance(shape,i%3?this.m.stoneLight:this.m.stone,[point.x+side.x*offset,.04,point.z+side.z*offset],[1,1,.9],[0,this.random()*3,0]);
+    if(flagstone){
+      // Interlocking inset polygons, rather than overlapping pentagons that
+      // looked like loose shards of paper on the walk.
+      const rows=Math.ceil(curve.getLength()/.78),columns=3,nodes=[];
+      for(let row=0;row<=rows;row++){
+        const q=curve.getPointAt(row/rows),t=curve.getTangentAt(row/rows),side=new THREE.Vector3(-t.z,0,t.x).normalize(),line=[];
+        for(let col=0;col<=columns;col++){
+          const offset=(col/columns-.5)*width+(col>0&&col<columns?(this.random()-.5)*.22:0);
+          const along=row>0&&row<rows?(this.random()-.5)*.22:0;
+          line.push(new THREE.Vector3(q.x+side.x*offset+t.x*along,.045,q.z+side.z*offset+t.z*along));
+        }
+        nodes.push(line);
       }
+      const vertices=[],colors=[];
+      for(let row=0;row<rows;row++)for(let col=0;col<columns;col++){
+        const corners=[nodes[row][col],nodes[row][col+1],nodes[row+1][col+1],nodes[row+1][col]];
+        const center=corners.reduce((sum,q)=>sum.add(q),new THREE.Vector3()).multiplyScalar(.25),poly=[];
+        for(let i=0;i<4;i++){
+          const q=corners[i].clone().lerp(center,.04),next=corners[(i+1)%4].clone().lerp(center,.04);
+          poly.push(q.clone().lerp(next,.10),q.clone().lerp(next,.90));
+        }
+        const color=(this.random()>.4?this.m.stoneLight.color:this.m.stone.color).clone().multiplyScalar(.94+this.random()*.09);
+        for(let i=0;i<poly.length;i++)for(const q of [center,poly[i],poly[(i+1)%poly.length]]){vertices.push(q.x,q.y,q.z);colors.push(color.r,color.g,color.b);}
+      }
+      const stones=new THREE.BufferGeometry();stones.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));stones.setAttribute('color',new THREE.Float32BufferAttribute(colors,3));stones.computeVertexNormals();
+      this.m.pathStone=this.material('#ffffff',{vertexColors:true});
+      const paving=new THREE.Mesh(stones,this.m.pathStone);paving.receiveShadow=true;this.scene.add(paving);
     }
   }
 
@@ -359,8 +357,13 @@ export class CampusWorld {
       const group = new THREE.Group(); group.position.set(...stop.marker);
       const note = new THREE.Mesh(new THREE.BoxGeometry(0.6, 0.03, 0.42), this.m.paper); note.castShadow=true; group.add(note);
       const flap = new THREE.Mesh(new THREE.ConeGeometry(0.27, 0.02, 3), this.m.white); flap.rotation.y=Math.PI/2; flap.position.y=0.025; flap.scale.z=0.7; group.add(flap);
-      const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.058,0.058,0.015,16), this.m.gold); seal.position.set(0,0.045,0); group.add(seal);
-      group.rotation.y=0.35+index*0.2; this.scene.add(group);
+      const seal = new THREE.Mesh(new THREE.CylinderGeometry(0.058,0.058,0.015,16), this.m.gold); seal.position.set(.19,.055,.11); group.add(seal);
+      const paper=document.createElement('canvas');paper.width=512;paper.height=320;const ink=paper.getContext('2d');
+      ink.fillStyle='#f5ead1';ink.fillRect(0,0,512,320);ink.strokeStyle='#b3a584';ink.lineWidth=3;ink.strokeRect(18,18,476,284);
+      ink.fillStyle='#28563e';ink.textAlign='center';ink.font='24px Georgia';ink.fillText('H I L L I O N',256,80);ink.font='bold 54px Georgia';ink.fillText(`CLUE 0${index+1}`,256,151);ink.font='italic 22px Georgia';ink.fillText('Follow the story.',256,224);
+      const texture=new THREE.CanvasTexture(paper);texture.colorSpace=THREE.SRGBColorSpace;
+      const label=new THREE.Mesh(new THREE.PlaneGeometry(.55,.35),new THREE.MeshStandardMaterial({map:texture,roughness:1}));label.rotation.x=-Math.PI/2;label.position.y=.04;group.add(label);
+      const arrival=notePose(stop).position;group.rotation.y=Math.atan2(arrival[0]-stop.marker[0],arrival[2]-stop.marker[2]); this.scene.add(group);
       const beacon = new THREE.Group(); beacon.position.set(stop.marker[0],stop.marker[1]+0.6,stop.marker[2]);
       const diamond = new THREE.Mesh(new THREE.OctahedronGeometry(0.105),this.m.glow); beacon.add(diamond);
       const ring = new THREE.Mesh(new THREE.TorusGeometry(0.23,0.008,5,36),this.m.glow); ring.rotation.x=-Math.PI/2; ring.position.y=-0.37; beacon.add(ring);
@@ -369,12 +372,14 @@ export class CampusWorld {
   }
 
   makeYearbook() {
-    this.book = new THREE.Group(); this.book.position.copy(v(route[6].marker)); this.book.position.y=1.16;
+    this.book = new THREE.Group(); this.book.visible=false; this.book.position.copy(v(route[6].marker)); this.book.position.y=.905;
     const back = new THREE.Mesh(new THREE.BoxGeometry(1.0,1.35,0.1),this.m.paper); back.position.set(0,0.67,0); back.castShadow=true; this.book.add(back);
     this.cover = new THREE.Group(); this.cover.position.set(-0.51,0,0.08);
     const coverMesh = new THREE.Mesh(new THREE.BoxGeometry(1.04,1.41,0.065),this.m.green); coverMesh.position.set(0.52,0.67,0); coverMesh.castShadow=true; this.cover.add(coverMesh);
     const border = new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.BoxGeometry(0.87,1.22,0.07)),new THREE.LineBasicMaterial({color:'#d9b75e'}));border.position.set(0.52,0.67,0.005);this.cover.add(border);
     const star = new THREE.Mesh(new THREE.OctahedronGeometry(0.13),this.m.gold);star.position.set(0.52,0.82,0.05);star.scale.z=0.25;this.cover.add(star);
+    this.cover.children.forEach(child=>child.userData.closedX=child.position.x);
+    this.bookOpeningSign=-1;
     this.book.add(this.cover);
     this.book.rotation.y=-Math.PI/2; // The standing cover faces the approach from the north.
     this.scene.add(this.book);
@@ -413,71 +418,90 @@ export class CampusWorld {
   cancelTravel() { if(this.travel){this.travel.resolve(false);this.travel=null;} }
   moveTo(index) {
     this.stop=index;this.mode='travel';this.markers.forEach(marker=>marker.beacon.visible=false);
-    const stop=route[index];const journey=this.move(stop.position,stop.look,stop.via,stop.duration);
-    this.travel.glance=stop.glance;this.travel.followPath=stop.followPath;return journey;
+    const stop=route[index],arrival=notePose(stop);
+    const blocked=q=>footprints.some(b=>!b.field&&q[0]>b.minX-.35&&q[0]<b.maxX+.35&&q[2]>b.minZ-.35&&q[2]<b.maxZ+.35);
+    const departure=departureWaypoints(index>0?route[index-1]:null,this.basePosition.toArray(),stop.via[0]||stop.position,blocked);
+    const via=[...departure,...stop.via,stop.position];
+    const journey=this.move(arrival.position,arrival.look,via,stop.duration);
+    this.travel.kind='walk';this.travel.marker=stop.marker;
+    this.travel.duration=this.calm?250:walkDuration(this.travel.curve.getLength());
+    return journey;
   }
   move(position,look,via,duration) {
     this.cancelTravel();
+    this.lastFrame=performance.now();
     return new Promise(resolve=>{
       const points=[this.basePosition.clone(),...via.map(v),v(position)];
-      this.travel={curve:new THREE.CatmullRomCurve3(points,false,'centripetal'),fromLook:this.target.clone(),toLook:v(look),position:v(position),started:performance.now(),duration:this.calm?250:duration,resolve};
+      // Height changes are a gentle lean, not a bouncing walking spline.
+      this.travel={curve:new THREE.CatmullRomCurve3(points,false,'centripetal'),fromLook:this.target.clone(),toLook:v(look),position:v(position),fromHeight:this.basePosition.y,elapsed:0,duration:this.calm?250:duration,resolve,kind:'focus'};
+      this.travel.length=this.travel.curve.getLength();
     });
   }
-  finishTravel() {
+  finishTravel(instant=true) {
     if(!this.travel)return;
-    const travel=this.travel;this.basePosition.copy(travel.position);this.target.copy(travel.toLook);this.camera.position.copy(this.basePosition);this.camera.lookAt(this.target);this.travel=null;
-    this.onProgress(1);travel.resolve(true);
+    const travel=this.travel;this.basePosition.copy(travel.position);this.target.copy(travel.toLook);this.camera.position.copy(this.basePosition);
+    if(instant)this.camera.lookAt(this.target);
+    this.travel=null;this.onProgress(1);travel.resolve(true);
   }
   discover(index) { this.mode='discover';this.stop=index;this.markers[index].beacon.visible=true; }
-  inspect(index) { this.mode='clue';this.markers[index].beacon.visible=false; }
+  inspect(index) {
+    this.mode='clue';this.markers[index].beacon.visible=false;
+    const pose=notePose(route[index],true,innerWidth<650);
+    this.move(pose.position,pose.look,[],1000);
+  }
   async toReveal() {
-    this.mode='reveal';this.markers.forEach(marker=>marker.beacon.visible=false);
+    this.mode='reveal';this.book.visible=true;this.markers.forEach(marker=>marker.beacon.visible=false);
     const marker=route[Math.max(0,this.stop)].marker;
-    this.book.position.set(marker[0],1.16,marker[2]);
+    this.markers[Math.max(0,this.stop)].group.visible=false;
+    this.book.position.set(marker[0],.905,marker[2]);
     const direction=new THREE.Vector3(marker[0]-this.basePosition.x,0,marker[2]-this.basePosition.z).normalize();
     this.book.rotation.y=Math.atan2(-direction.x,-direction.z);
-    const destination=[marker[0]-direction.x*4,1.75,marker[2]-direction.z*4];
-    return this.move(destination,[marker[0],1.75,marker[2]],[],1800);
+    const blocked=side=>{
+      const q=new THREE.Vector3(side*1.3,0,.25).applyAxisAngle(new THREE.Vector3(0,1,0),this.book.rotation.y).add(this.book.position);
+      return footprints.some(b=>!b.field&&q.x>b.minX-.05&&q.x<b.maxX+.05&&q.z>b.minZ-.05&&q.z<b.maxZ+.05);
+    };
+    const hingeRight=blocked(-1)&&!blocked(1),side=hingeRight?-1:1;
+    this.cover.position.x=-.51*side;this.cover.children.forEach(child=>child.position.x=child.userData.closedX*side);
+    this.bookOpeningSign=hingeRight?1:-1;
+    const destination=[marker[0]-direction.x*2.6,1.65,marker[2]-direction.z*2.6];
+    return this.move(destination,[marker[0],1.62,marker[2]],[],1800);
   }
   spotlight() { this.mode='spotlight'; }
   reset() {
-    this.bookGeneration++;
-    this.cancelTravel();this.mode='intro';this.stop=-1;this.basePosition.copy(v(introShot.position));this.target.copy(v(introShot.look));
-    this.markers.forEach(marker=>marker.beacon.visible=false);this.cover.rotation.y=0;this.bookOpening=-1;
+    this.bookGeneration++;this.book.visible=false;
+    this.cancelTravel();this.mode='intro';this.stop=-1;this.basePosition.copy(v(introShot.position));this.target.copy(v(introShot.look));this.camera.position.copy(this.basePosition);this.camera.lookAt(this.target);
+    this.markers.forEach(marker=>{marker.beacon.visible=false;marker.group.visible=true;});this.cover.rotation.y=0;this.bookOpening=-1;
     if(this.portrait){this.book.remove(this.portrait);this.portrait.material.map.dispose();this.portrait.material.dispose();this.portrait.geometry.dispose();this.portrait=null;}
   }
 
   animate(now) {
     this.frame=requestAnimationFrame(this.animate);
     if(document.hidden){this.lastFrame=now;return;}
-    const delta=Math.min((now-this.lastFrame)/1000,0.05);this.lastFrame=now;this.clock+=delta;
-    let bob=0;
+    const delta=Math.max(0,Math.min((now-this.lastFrame)/1000,0.05));this.lastFrame=now;this.clock+=delta;
     if(this.travel) {
-      const travel=this.travel,t=Math.min(1,(now-travel.started)/travel.duration),s=ease(t);
-      if(!this.calm){this.basePosition.copy(travel.curve.getPointAt(s));this.target.lerpVectors(travel.fromLook,travel.toLook,ease(Math.min(1,t*1.5)));bob=Math.sin(t*Math.PI*12)*0.018*Math.sin(t*Math.PI);}
-      if(!this.calm && travel.followPath){
-        const ahead=travel.curve.getPointAt(Math.min(1,s+.045));
-        const forward=ahead.sub(this.basePosition);forward.y=0;
-        if(forward.lengthSq()>.0001){
-          const heading=this.basePosition.clone().add(forward.normalize().multiplyScalar(7));heading.y=1.85;
-          this.target.lerpVectors(travel.fromLook,heading,ease(Math.min(1,t*7)));
-          this.target.lerp(travel.toLook,ease(Math.max(0,(t-.84)/.16)));
-        }
+      const travel=this.travel;travel.elapsed+=delta*1000;
+      const t=Math.min(1,travel.elapsed/travel.duration),u=travel.kind==='walk'?walkingProgress(t):smooth(t);
+      if(!this.calm){
+        this.basePosition.copy(travel.curve.getPointAt(u));
+        if(travel.kind==='walk'){
+          this.basePosition.y=THREE.MathUtils.lerp(travel.fromHeight,1.72,smooth(t/.15));
+          this.target.set(...walkingTarget(travel.curve,u,travel.length,travel.marker));
+        }else this.target.lerpVectors(travel.fromLook,travel.toLook,smooth(t));
       }
-      if(!this.calm && travel.glance){const g=travel.glance,u=(t-g.start)/(g.end-g.start);if(u>0&&u<1)this.target.lerp(v(g.target),Math.sin(Math.PI*u)**2*g.strength);}
-      this.onProgress(t);if(t>=1)this.finishTravel();
+      this.onProgress(t);if(t>=1)this.finishTravel(this.calm);
     }
-    this.camera.position.copy(this.basePosition);this.camera.position.y+=bob;
-    const target=this.target.clone();
-    if(!this.calm&&this.mode!=='discover'){target.x+=Math.sin(this.clock*.24)*.035;target.y+=Math.sin(this.clock*.31)*.018;}
-    this.camera.lookAt(target);
+    this.camera.position.copy(this.basePosition);
+    const orientation=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(this.camera.position,this.target,this.camera.up));
+    const angle=this.camera.quaternion.angleTo(orientation);
+    if(this.calm||this.mode==='survey')this.camera.quaternion.copy(orientation);
+    else this.camera.quaternion.slerp(orientation,angle<.00001?1:Math.min(1-Math.exp(-9*delta),TURN_RATE*delta/angle));
     if(new URLSearchParams(location.search).has('overhead')) {
       this.camera.position.set(20,300,30);this.camera.up.set(0,0,-1);this.camera.lookAt(20,0,30);
     }
-    if(!this.calm){this.animated.forEach((mesh,i)=>{mesh.position.x=Math.sin(this.clock*.65+i*.7)*.045;mesh.position.z=Math.cos(this.clock*.42+i)*.025;});this.clouds.position.x=Math.sin(this.clock*.015)*6;this.motes.position.y=Math.sin(this.clock*.2)*.18;}
+    if(!this.calm){this.animateCampusLife(delta);this.animated.forEach((mesh,i)=>{mesh.position.x=Math.sin(this.clock*.65+i*.7)*.045;mesh.position.z=Math.cos(this.clock*.42+i)*.025;});this.clouds.position.x=Math.sin(this.clock*.015)*6;this.motes.position.y=Math.sin(this.clock*.2)*.18;}
     this.markers.forEach(({beacon,diamond,index})=>{if(beacon.visible){beacon.position.y=route[index].marker[1]+.62+(this.calm?0:Math.sin(this.clock*1.7)*.045);diamond.rotation.y=this.calm?0:this.clock*.6;}});
-    if(this.bookOpening>=0){const t=this.calm?1:Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=-ease(t)*Math.PI*.82;}
-    if(this.mode==='discover'&&this.stop>=0){const marker=route[this.stop].marker;const point=new THREE.Vector3(marker[0],marker[1]+1.05,marker[2]).project(this.camera);this.onMarker({x:(point.x*.5+.5)*innerWidth,y:(-.5*point.y+.5)*innerHeight,visible:point.z<1});}
+    if(this.bookOpening>=0){const t=this.calm?1:Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=this.bookOpeningSign*ease(t)*Math.PI*.82;}
+    if(this.mode==='discover'&&this.stop>=0){const marker=route[this.stop].marker;const point=new THREE.Vector3(marker[0],marker[1]+.18,marker[2]).project(this.camera);this.onMarker({x:(point.x*.5+.5)*innerWidth,y:(-.5*point.y+.5)*innerHeight,visible:point.z<1});}
     // Keep the sky inside the camera far plane throughout the campus journey.
     // A world-origin dome leaves a clipped black hole when viewed from the field.
     this.sky.position.copy(this.camera.position);
@@ -495,4 +519,4 @@ export class CampusWorld {
   }
 }
 
-Object.assign(CampusWorld.prototype, campusArchitecture);
+Object.assign(CampusWorld.prototype, campusArchitecture, campusDetail);

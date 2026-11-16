@@ -25,13 +25,15 @@ The build is a static `dist/` folder, including locally hosted Three.js and its 
 
 Start the mystery, follow an automatic eye-height camera journey, and inspect an envelope at each stop. A compact note lets you guess or continue. Previous clues stay available through **Collected notes**. **Arrive now** skips any journey. The wave icon enables calm motion; the operating system's reduced-motion preference is also respected.
 
-Seven clue stops follow the supplied Greenhill campus map and nine recorded walking clips: Brinkmann Field → Phillips athletic entrance → VSI / STEM + Innovation Center → Briggs Clocktower → eastern Foote Quadrangle → Fulton Upper School → MPAC. The geography is evidence-led; the procedural architecture remains stylized. Timestamp registrations, uncertainties and matched comparisons are documented in [the reconstruction](docs/campus-route-reconstruction.md) and [architecture and spacing review](docs/campus-architecture-spacing.md). Reference footage and extracted images remain local and are excluded from publication and the deployed build.
+Seven clue stops follow the supplied Greenhill campus map and nine recorded walking clips: Brinkmann Field → Phillips athletic entrance → VSI / STEM + Innovation Center → Briggs Clocktower → eastern Foote Quadrangle → Fulton Upper School → MPAC. The geography is evidence-led; the procedural architecture remains stylized. Timestamp registrations, uncertainties and matched comparisons are documented in [the reconstruction](docs/campus-route-reconstruction.md) and [detail and camera review](docs/campus-polish.md). Reference footage and extracted images remain local and are excluded from publication and the deployed build.
 
 The final camera approaches the yearbook, its cover opens, and the fictional portrait appears for the first time. Skip directly to the spotlight at any point. The spotlight includes the result, portrait, message, expandable seven facts, sharing, and replay. Sharing preserves the original spoiler-free format and native-share / clipboard / manual-copy fallbacks.
 
 ## Source
 
 - `src/game.js` and `src/data.js`: preserved rules, scoring, 140 fictional names, and curated case data.
+- `src/campus-detail.js`: grounded landscaping, street furniture, pavement detail, placement clearance and ambient campus life.
+- `src/camera-motion.js`: distance-based pacing, intentional note approaches and reading composition.
 - `src/campus-architecture.js`: footage-specific massing, roof profiles, facade details, colonnades and physical space around the route.
 - `src/world.js`: Three.js scene, batched geometry, lighting, procedural textures, environmental motion, camera journeys, envelope markers, and animated yearbook.
 - `src/route.js`: seven eye-height stops, look directions, envelope positions, safe path waypoints, and timing. Adjust this file to tune pacing and framing.
@@ -57,7 +59,7 @@ The checks cover real WebGL rendering, guided movement and in-world markers, all
 
 ## Deliberate limits and next steps
 
-One fixed fictional mystery with no persistence or daily rotation. Content is bundled in the browser. The model follows the map's building positions and the footage's exterior route and sightlines. Dimensions remain schematic, and the exact Upper School court sequence is provisional. There are no characters, live campus activity, or audio. WebGL2 is required, with a recovery message if it is unavailable or its context is lost.
+One fixed fictional mystery with no persistence or daily rotation. Content is bundled in the browser. The model follows the map's building positions and the footage's exterior route and sightlines. Dimensions remain schematic, and the exact Upper School court sequence is provisional. Five fictional students and two peacocks provide restrained background motion; there are no live campus feeds or audio. WebGL2 is required, with a recovery message if it is unavailable or its context is lost.
 
 Next, playtest travel length, clue framing, and the sense of place on the actual school laptops. Use that feedback to refine the route, foliage, and architectural detail before adding real, voluntarily submitted senior content.
 
@@ -70,3 +72,7 @@ Next, playtest travel length, clue framing, and the sense of place on the actual
 Geography tests sample each smoothed route against mapped ground occupancy. `tests/campus-video.browser.mjs` also checks the rendered routes against walls, posts, trees and furniture, plus the straight covered walk, open VSI undercroft, MPAC lobby setback and upward-facing paving. `tests/gym.browser.mjs` forwards to these updated checks; the old arch-specific geometry was contradicted by the footage. Early correct guesses still reveal the yearbook at the current clue location.
 
 The architecture pass retains the map registrations and expands horizontal space around eye-height buildings and furniture. The gym arcade, low pitched pavilions, VSI fin/curtain-wall system and MPAC limestone cantilever are distinct procedural models. Clearances are checked at foot and eye height, across a 1.3-unit pedestrian band; see the architecture review for measured model spans and reference limits.
+
+### Environment and camera polish
+
+The [polish report](docs/campus-polish.md) includes reference notes, before/after comparisons and a representative walk video. Detail placement reserves actual camera approaches and reading positions; ambient movement freezes in calm mode. The camera follows the path with a bounded turn rate, then approaches and frames each labeled envelope. Existing gameplay, map footprints and the seven-stop structure are unchanged.
