@@ -54,6 +54,17 @@ export class CampusWorld {
       this.scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),new THREE.LineBasicMaterial({color:0x202020})));
       route.forEach(stop=>{const dot=new THREE.Mesh(new THREE.SphereGeometry(.65),new THREE.MeshBasicMaterial({color:0xff2929}));dot.position.set(stop.marker[0],1,stop.marker[2]);this.scene.add(dot);});
     }
+    if(new URLSearchParams(location.search).has('placement')){
+      const lineMaterial=new THREE.LineBasicMaterial({color:0xffc857});
+      for(const r of this.detailRecords){
+        if(['shrub','grasses'].includes(r.kind))continue;
+        const points=Array.from({length:33},(_,i)=>new THREE.Vector3(r.x+Math.cos(i/32*Math.PI*2)*r.radius,.12,r.z+Math.sin(i/32*Math.PI*2)*r.radius));
+        const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(points),lineMaterial);line.name=`clearance: ${r.kind}`;this.scene.add(line);
+      }
+      const points=this.walkSamples.map(([x,z])=>new THREE.Vector3(x,.16,z));
+      this.scene.add(new THREE.Points(new THREE.BufferGeometry().setFromPoints(points),new THREE.PointsMaterial({color:0xff4477,size:.08})));
+      console.table(this.detailRecords.filter(r=>!['shrub','grasses'].includes(r.kind)));
+    }
     this.makeYearbook();
     this.makeMotes();
     this.resize = this.resize.bind(this);
@@ -238,6 +249,8 @@ export class CampusWorld {
 
   picnicTable(mx,my,umbrella=false) {
     const [x,,z]=mapPoint(mx,my,0),m=this.m;
+    if(!this.detailClear(x,z,1.05,.5))return;
+    this.registerDetail('picnic table',x,z,1.05,'clips 05 and 08');
     this.column(x,.78,z,.5,.09,m.green);this.column(x,.4,z,.055,.8,m.frame);
     for(const [dx,dz]of [[-.75,0],[.75,0],[0,-.75],[0,.75]]){
       this.box(x+dx,.43,z+dz,.45,.09,.45,m.green);
@@ -425,6 +438,13 @@ export class CampusWorld {
     const journey=this.move(arrival.position,arrival.look,via,stop.duration);
     this.travel.kind=index===0?'opening':'walk';this.travel.marker=stop.marker;
     this.travel.duration=this.calm?250:walkDuration(this.travel.curve.getLength());
+    if(index>0){
+      const initial=v(walkingTarget(this.travel.curve,0,this.travel.length,stop.marker));
+      const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(this.camera.position,initial,this.camera.up));
+      const angle=this.camera.quaternion.angleTo(q);
+      this.travel.turnDuration=angle>1.0?Math.min(1400,angle/TURN_RATE*700):0;
+      this.travel.initialLook=initial;
+    }
     return journey;
   }
   move(position,look,via,duration) {
@@ -480,10 +500,12 @@ export class CampusWorld {
     const delta=Math.max(0,Math.min((now-this.lastFrame)/1000,0.05));this.lastFrame=now;this.clock+=delta;
     if(this.travel) {
       const travel=this.travel;travel.elapsed+=delta*1000;
-      const t=Math.min(1,travel.elapsed/travel.duration),u=travel.kind==='walk'?walkingProgress(t):smooth(t);
+      const turning=travel.elapsed<(travel.turnDuration||0);
+      const t=Math.max(0,Math.min(1,(travel.elapsed-(travel.turnDuration||0))/travel.duration)),u=travel.kind==='walk'?walkingProgress(t):smooth(t);
       if(!this.calm){
         this.basePosition.copy(travel.curve.getPointAt(u));
-        if(travel.kind==='walk'){
+        if(turning){this.target.lerpVectors(travel.fromLook,travel.initialLook,smooth(travel.elapsed/travel.turnDuration));}
+        else if(travel.kind==='walk'){
           this.basePosition.y=THREE.MathUtils.lerp(travel.fromHeight,1.72,smooth(t/.15));
           this.target.set(...walkingTarget(travel.curve,u,travel.length,travel.marker));
         }else this.target.lerpVectors(travel.fromLook,travel.toLook,smooth(t));

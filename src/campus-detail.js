@@ -32,6 +32,9 @@ export const campusDetail = {
     if(footprints.some(b=>!b.field&&distanceToRect(x,z,b)<radius+.12))return false;
     if(this.walkSamples.some(q=>Math.hypot(q[0]-x,q[1]-z)<radius+margin))return false;
     if(route.some(s=>Math.hypot(x-s.marker[0],z-s.marker[2])<radius+.9))return false;
+    const hard=this.detailRecords.filter(r=>!['shrub','grasses'].includes(r.kind));
+    if(hard.some(r=>Math.hypot(r.x-x,r.z-z)<r.radius+radius+.12))return false;
+    if(this.treeRecords.some(r=>Math.hypot(r.x-x,r.z-z)<.22*r.size+radius+.12))return false;
     return true;
   },
   registerDetail(kind,x,z,radius,source='inferred'){
@@ -44,6 +47,7 @@ export const campusDetail = {
     this.prepareDetailSafety();
     let closest=Math.min(...footprints.filter(b=>!b.field).map(b=>distanceToRect(x,z,b)));
     if(closest<.4||!this.detailClear(x,z,.18*size,.7))return;
+    if((this.roofZones||[]).some(({rect})=>{const a=p(rect[0],rect[1],0),b=p(rect[2],rect[3],0);return x>a[0]-.3&&x<b[0]+.3&&z>a[2]-.3&&z<b[2]+.3;}))return;
     const radius=Math.min(3.05*size,closest-.16);
     if(radius<.38)return;
     const m=this.m,height=(4.4+this.random()*.4)*size,base=-.055;
@@ -54,7 +58,7 @@ export const campusDetail = {
       this.beam([x,base+height*.7,z],[x+Math.cos(a)*lean,height+.65*size,z+Math.sin(a)*lean],.055*size,m.trunk);
     }
     for(let i=0;i<7;i++){
-      const a=i*2.399,spread=i===0?0:radius*.42;
+      const a=i*2.399+size,spread=i===0?0:radius*(.29+this.random()*.16);
       const h=height+(i===0?1.1:.65)*size;
       this.instance(this.leafGeometry,[m.leaf,m.leafLight,m.leafDark][i%3],[x+Math.cos(a)*spread,h,z+Math.sin(a)*spread],[radius*.55,1.3*size,radius*.55],[0,a,0]);
     }

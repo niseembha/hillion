@@ -31,14 +31,15 @@ export const campusArchitecture = {
     };
     Object.assign(this.m,{
       campusBrick:this.material('#d9cfb8',{map:masonry('#ded6bf','#a99e8950',20,7)}),
-      schoolBrick:this.material('#c5b99f',{map:masonry('#d1c6ad','#a1998640',20,7)}),
+      schoolBrick:this.material('#b9a187',{map:masonry('#c8ae93','#82796a65',20,7)}),
       limestone:this.material('#e3d8bb',{map:masonry('#e9dfc4','#b1a68e45',5,4,false)}),
       pavilionStone:this.material('#e1dac3',{map:masonry('#e8e2ce','#b8af9838',5,3,false)}),
       silver:this.material('#bac1b9',{metalness:.48,roughness:.44}),
       darkSteel:this.material('#53605a',{metalness:.38,roughness:.48}),
       windowBack:this.material('#526c65',{roughness:.42,metalness:.16}),
       soffit:this.material('#ded0ae'),
-      pavingBrick:this.material('#bea98d',{map:masonry('#cbbb9f','#8e89736a',16,18)}),
+      pavingBrick:this.material('#ad8773',{map:masonry('#bd9981','#75695375',16,18)}),
+      pierBrick:this.material('#b69a7f',{map:masonry('#c3a88b','#84756560',20,7)}),
       pebbles:this.material('#e8e5d7')
     });
     this.facadeGeometries=new Map();
@@ -109,9 +110,35 @@ export const campusArchitecture = {
     }
   },
 
+  schoolPavilion(rect,height=3.3,variant=0) {
+    const m=this.m,[a,b,c,d]=rect,x=p((a+c)/2,0,0)[0],z=p(0,(b+d)/2,0)[2],w=(c-a)*MAP_SCALE,depth=(d-b)*MAP_SCALE;
+    this.masonryBlock(rect,0,height,m.schoolBrick);
+    this.box(x,.1,z,w+.08,.2,depth+.08,m.stoneLight);
+    // Broad, shallow roof planes and predominantly masonry elevations (06–08).
+    this.pitchedRoof(x,z,w+1.45,depth+1.5,height+.12,.24);
+    for(const side of [-1,1]){
+      const face=z+side*(depth/2+.04),heading=side===1?0:Math.PI;
+      let bay=0;
+      for(let dx=-w/2+2;dx<w/2-1.3;dx+=4.8,bay++){
+        const entry=(bay+variant)%4===1;
+        this.windowBay(x+dx,face,entry?1.65:2.7,entry?2.65:.62,heading,entry?.04:1.7,entry);
+        if(entry){
+          this.box(x+dx,height-.12,face+side*.5,3.4,.18,1.2,m.roof);
+          for(const sign of [-1,1]){
+            // Masonry shoulders taper inward above the recessed entry.
+            this.beam([x+dx+sign*1.55,0,face+side*.52],[x+dx+sign*1.24,height-.2,face+side*.52],.13,m.schoolBrick);
+          }
+        }
+      }
+      for(let dz=-depth/2+2;dz<depth/2-1;dz+=4.6)
+        this.windowBay(x+side*(w/2+.04),z+dz,1.7,1.35,side===1?Math.PI/2:-Math.PI/2,.85);
+    }
+  },
+
   coveredWalk(rect,height=3.15,axis='z',timber=true,pitched=false) {
     const [a,b,c,d]=rect,m=this.m,[x,,z]=p((a+c)/2,(b+d)/2,0),w=(c-a)*MAP_SCALE,depth=(d-b)*MAP_SCALE;
-    const rafter=a===775?m.wood:m.darkSteel;
+    const athletic=a===775,rafter=athletic?m.wood:m.darkSteel;
+    (this.roofZones??=[]).push({rect,height});
     this.mapBox(rect,0,.08,m.path);
     if(pitched)this.pitchedRoof(x,z,w+.35,depth+.3,height,.6);
     else{
@@ -132,13 +159,17 @@ export const campusArchitecture = {
         // Clip 08's covered court exit is an open bay, not a central pier.
         if(a===1327&&my>498&&my<509)continue;
         if(a===1148&&my>605&&my<620)continue;
-        this.box(px,height/2,pz,.38,height,.42,m.campusBrick);
+        this.box(px,height/2,pz,.38,height,.42,athletic?m.pierBrick:m.schoolBrick);
         // Distinctly fine masonry on the outward post face.
-        this.facade(.38,height,px,height/2,pz+.216,m.campusBrick);
+        this.facade(.38,height,px,height/2,pz+.216,athletic?m.pierBrick:m.schoolBrick);
+        if(athletic){
+          this.box(px,1.48,pz+.235,.15,.24,.065,m.darkSteel);
+          this.box(px,1.48,pz+.272,.11,.17,.018,m.white);
+        }
         if(axis==='z')this.beam([px,height-.12,pz],[px-side*.45,height-.4,pz],.035,m.darkSteel);
       }
       if(axis==='z'){
-        this.box(x,height-.16,z+along,w,.16,.12,rafter);
+        this.box(x,height-.16,z+along,w,.22,.18,rafter);
         this.box(x,.048,z+along,w,.012,.28,m.pavingBrick);
         this.column(x,height-.12,z+along-.35,.075,.08,m.white);
       }else this.box(x+along,height-.16,z,.12,.16,depth,rafter);
@@ -205,7 +236,8 @@ export const campusArchitecture = {
     for(let wx=start;wx<end-.3;wx+=1.7){
       const width=Math.min(1.67,end-wx);
       this.box(wx+width/2,1.9,z+.025,width,3.8,.025,m.glass);
-      this.box(wx,1.9,z+.08,.045,3.8,.08,m.silver);
+      this.box(wx,1.9,z+.08,.065,3.8,.14,m.darkSteel);
+      this.box(wx+width/2,1.2,z+.09,width,.045,.12,m.silver);
       this.box(wx+width/2,2.8,z+.07,width,.045,.08,m.silver);
     }
     this.box((start+end)/2,.12,z+.05,end-start,.18,.12,m.silver);
@@ -218,11 +250,12 @@ export const campusArchitecture = {
     for(const mx of [854,891,927]){const q=p(mx,541,0);this.box(q[0],.76,q[2],1.5,.10,.7,m.woodLight);for(const dx of [-.55,.55])this.box(q[0]+dx,.37,q[2],.06,.74,.5,m.frame);}
 
     // Upper horizontal brise-soleil is a fine, shallow silver band, not a giant grille.
-    for(let y=3.98;y<5.5;y+=.17)this.mapBox([831,545,962,546.3],y,.065,m.silver);
+    for(let y=3.98;y<5.5;y+=.17)this.mapBox([831,545,962,548.4],y,.065,m.silver);
     for(let mx=839;mx<958;mx+=17){
       const wx=p(mx,0,0)[0];this.windowBay(wx,p(0,545.2,0)[2],1.6,2.15,0,5.65);
       this.box(wx+.94,6.8,z+.25,.14,2.55,.55,m.plaster);
     }
+    for(let mx=835;mx<960;mx+=17){const q=p(mx,548,0);this.beam([q[0],3.78,z+.08],[q[0],4.35,q[2]],.035,m.darkSteel);}
     // West return: projecting vertical screens around stacked punched windows.
     for(let my=580;my<625;my+=19)for(const sill of [.75,4.9]){
       const pt=p(793.8,my,0);this.windowBay(pt[0],pt[2],1.6,2.2,-Math.PI/2,sill);
@@ -275,9 +308,9 @@ export const campusArchitecture = {
     }
     for(let mx=1511;mx<1533;mx+=7){const pt=p(mx,590,0);this.windowBay(pt[0],pt[2],1.62,4.06,Math.PI,.035);}
     for(const my of [605,647,688]){const pt=p(1499,my,0);this.column(pt[0],2.1,pt[2],.115,4.2,m.darkSteel);}
-    for(let my=596;my<=628;my+=6){const pt=p(1477.8,my,0);this.windowBay(pt[0],pt[2],1.32,3.45,-Math.PI/2,5.65);}
+    for(let my=596;my<=628;my+=6){const pt=p(1477.8,my,0);this.windowBay(pt[0],pt[2],1.32,2.6,-Math.PI/2,6.5);}
     // Deep reveals flank the upper window group, rather than green windows glued on stone.
-    for(const my of [593,633])this.mapBox([1476.3,my,1478,my+1],7.4,4.0,m.limestone);
+    for(const my of [593,633])this.mapBox([1476.3,my,1478,my+1],7.8,3.0,m.limestone);
     this.sign('MARSHALL FAMILY PERFORMING ARTS CENTER',west-.03,4.43,p(0,645,0)[2],14,.32,-Math.PI/2,null,'36px sans-serif');
     for(const mx of [1487,1496])for(let my=612;my<697;my+=17){const pt=p(mx,my,0);this.box(pt[0],4.185,pt[2],.065,.012,.065,m.white);}
 
@@ -296,13 +329,21 @@ export const campusArchitecture = {
     this.coveredWalk([1180,558,1244,575],3.2,'x');
     this.coveredWalk([1238,476,1345,488],3.2,'x',true);
     this.coveredWalk([1327,486,1344,518],3.2,'z',true);
-    this.mapBox(landmarks.upperCourt,0,.07,m.pavingBrick);
-    const [ca,cb,cc,cd]=landmarks.upperCourt,cw=(cc-ca)*MAP_SCALE,cl=(cd-cb)*MAP_SCALE;
-    const paving=new THREE.PlaneGeometry(cw,cl),uv=paving.attributes.uv;
-    for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*cw/4,uv.getY(i)*cl/2);
-    this.instance(paving,m.pavingBrick,p((ca+cc)/2,(cb+cd)/2,.042),[1,1,1],[-Math.PI/2,0,0]);
-    for(const [mx,my]of [[1254,486],[1308,488]]){const pt=p(mx,my,0);this.tree(pt[0],pt[2],.65);}
-    for(const [mx,my]of [[1255,508],[1311,508]])this.picnicTable(mx,my);
+    // Brick court has real openings for the shade trees, not trunks through pavers.
+    const wells=[[1255,504]],vertices=[],uvs=[];
+    const [ca,cb,cc,cd]=landmarks.upperCourt;
+    for(let mx=ca;mx<cc;mx+=3)for(let my=cb;my<cd;my+=3){
+      if(wells.some(([x,y])=>Math.abs(mx+1.5-x)<5&&Math.abs(my+1.5-y)<5))continue;
+      const a=p(mx,my,.043),b=p(Math.min(cc,mx+3),Math.min(cd,my+3),.043);
+      for(const [x,z]of [[a[0],a[2]],[a[0],b[2]],[b[0],a[2]],[b[0],a[2]],[a[0],b[2]],[b[0],b[2]]]){vertices.push(x,.043,z);uvs.push(x/4,z/2);}
+    }
+    const paving=new THREE.BufferGeometry();paving.setAttribute('position',new THREE.Float32BufferAttribute(vertices,3));paving.setAttribute('uv',new THREE.Float32BufferAttribute(uvs,2));paving.computeVertexNormals();
+    const court=new THREE.Mesh(paving,m.pavingBrick);court.receiveShadow=true;this.scene.add(court);
+    for(const [mx,my]of wells){
+      this.mapBox([mx-4,my-4,mx+4,my+4],.022,.03,m.mulch);
+      const pt=p(mx,my,0);this.tree(pt[0],pt[2],1.1);
+    }
+    for(const [mx,my]of [[1266,508],[1311,508]])this.picnicTable(mx,my);
     for(const [mx,my]of [[953,568],[983,580],[1023,594],[1087,593],[1195,541],[1218,530],[1372,559],[1417,542]]){const pt=p(mx,my,0);this.tree(pt[0],pt[2],.8);}
     this.picnicTable(955,574,true);this.picnicTable(1037,600);
     for(const [mx,my]of [[1033,646],[1068,615],[1114,644]]){const pt=p(mx,my,0);this.box(pt[0],.2,pt[2],.8,.4,.6,m.stoneLight);}
@@ -325,6 +366,8 @@ export const campusArchitecture = {
         this.masonryBlock(building.rect,0,6.1,this.m.campusBrick);
         this.box(x,6.15,z,w+.3,.15,depth+.3,this.m.roof);
         this.windowBay(building.minX-.03,building.maxZ-1.9,2.65,2.4,-Math.PI/2,.05,true);
+      }else if(/Fulton|Korenvaes/.test(building.name)){
+        this.schoolPavilion(building.rect,3.3,building.name==='Korenvaes Upper School'?1:0);
       }else{
         const pavilion=building.name.startsWith('Rotunda');
         this.building(x,z,w,depth,pavilion?3.15:building.height||3.55,pavilion?'pavilion':'school');
