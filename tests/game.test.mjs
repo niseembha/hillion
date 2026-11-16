@@ -10,7 +10,7 @@ const guess = (state, id) => transition(state, { type: 'GUESS', id });
 test('the curated case has seven text clues, a unique answer, and a realistic roster', () => {
   assert.equal(mystery.clues.length, 7);
   mystery.clues.forEach(clue => { assert.equal(typeof clue.text, 'string'); assert.ok(clue.text.length > 10); assert.ok(!clue.text.includes(mystery.name)); });
-  assert.ok(roster.length >= 130);
+  assert.ok(roster.length === 100);
   assert.equal(new Set(roster.map(person => person.id)).size, roster.length);
   assert.equal(roster.filter(person => person.id === mystery.studentId).length, 1);
 });
@@ -83,12 +83,12 @@ test('choosing the final reveal with unused guesses ends the case for zero point
 });
 
 test('roster search is case insensitive, supports name parts and apostrophes, and marks duplicates', () => {
-  assert.deepEqual(searchRoster('  mAyA  cHeN  ').map(person => person.id), ['maya-chen']);
-  assert.ok(searchRoster('chen').length > 1);
-  assert.equal(searchRoster("O'BRIEN")[0].name, 'Liam O’Brien');
+  assert.deepEqual(searchRoster('  nIsEeM  bHaTtAcHaRyA  ').map(person => person.id), ['niseem-bhattacharya']);
+  assert.ok(searchRoster('bhattacharya').length > 1);
+  assert.equal(searchRoster("dube")[0].name, 'Malia Dubé');
   assert.equal(searchRoster('not in the roster').length, 0);
   assert.equal(searchRoster(' ').length, 0);
-  assert.equal(searchRoster('maya', [{ id: 'maya-chen' }])[0].guessed, true);
+  assert.equal(searchRoster('niseem', [{ id: 'niseem-bhattacharya' }])[0].guessed, true);
 });
 
 test('shared results never expose the senior, facts, or guess names in either ending', () => {
