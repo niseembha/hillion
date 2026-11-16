@@ -157,10 +157,6 @@ async function beginReveal() {
       ? `Mystery solved. ${state.score} points. Your senior spotlight is beginning.`
       : "The story is complete. Your senior spotlight is beginning.",
   );
-  if (calm) {
-    finishReveal();
-    return;
-  }
   const arrived = await world.toReveal();
   if (!arrived || token !== sequence) return;
   try {

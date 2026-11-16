@@ -427,7 +427,7 @@ export class CampusWorld {
     this.renderer.setSize(innerWidth,innerHeight,false);
     this.camera.aspect=innerWidth/innerHeight;this.camera.fov=innerWidth<650?66:53;this.camera.updateProjectionMatrix();
   }
-  setCalm(value) { this.calm=true; if(value&&this.travel)this.finishTravel(); }
+  setCalm() { this.calm=true; }
   cancelTravel() { if(this.travel){this.travel.resolve(false);this.travel=null;} }
   moveTo(index) {
     this.stop=index;this.mode='travel';this.markers.forEach(marker=>marker.beacon.visible=false);
@@ -437,7 +437,7 @@ export class CampusWorld {
     const via=[...departure,...stop.via,stop.position];
     const journey=this.move(arrival.position,arrival.look,via,stop.duration);
     this.travel.kind=index===0?'opening':'walk';this.travel.marker=stop.marker;
-    this.travel.duration=this.calm?250:walkDuration(this.travel.curve.getLength());
+    this.travel.duration=walkDuration(this.travel.curve.getLength());
     if(index>0){
       const initial=v(walkingTarget(this.travel.curve,0,this.travel.length,stop.marker));
       const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(this.camera.position,initial,this.camera.up));
@@ -453,7 +453,7 @@ export class CampusWorld {
     return new Promise(resolve=>{
       const points=[this.basePosition.clone(),...via.map(v),v(position)];
       // Height changes are a gentle lean, not a bouncing walking spline.
-      this.travel={curve:new THREE.CatmullRomCurve3(points,false,'centripetal'),fromLook:this.target.clone(),toLook:v(look),position:v(position),fromHeight:this.basePosition.y,elapsed:0,duration:this.calm?250:duration,resolve,kind:'focus'};
+      this.travel={curve:new THREE.CatmullRomCurve3(points,false,'centripetal'),fromLook:this.target.clone(),toLook:v(look),position:v(position),fromHeight:this.basePosition.y,elapsed:0,duration,resolve,kind:'focus'};
       this.travel.length=this.travel.curve.getLength();
     });
   }
@@ -502,7 +502,7 @@ export class CampusWorld {
       const travel=this.travel;travel.elapsed+=delta*1000;
       const turning=travel.elapsed<(travel.turnDuration||0);
       const t=Math.max(0,Math.min(1,(travel.elapsed-(travel.turnDuration||0))/travel.duration)),u=travel.kind==='walk'?walkingProgress(t):smooth(t);
-      if(!this.calm){
+      {
         this.basePosition.copy(travel.curve.getPointAt(u));
         if(turning){this.target.lerpVectors(travel.fromLook,travel.initialLook,smooth(travel.elapsed/travel.turnDuration));}
         else if(travel.kind==='walk'){
@@ -510,20 +510,21 @@ export class CampusWorld {
           this.target.set(...walkingTarget(travel.curve,u,travel.length,travel.marker));
         }else this.target.lerpVectors(travel.fromLook,travel.toLook,smooth(t));
       }
-      this.onProgress(t);if(t>=1)this.finishTravel(this.calm);
+      this.onProgress(t);if(t>=1)this.finishTravel(false);
     }
     this.camera.position.copy(this.basePosition);
     const orientation=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(this.camera.position,this.target,this.camera.up));
     const angle=this.camera.quaternion.angleTo(orientation);
-    if(this.calm||this.mode==='survey')this.camera.quaternion.copy(orientation);
+    if(this.mode==='survey')this.camera.quaternion.copy(orientation);
     else this.camera.quaternion.slerp(orientation,angle<.00001?1:Math.min(1-Math.exp(-9*delta),TURN_RATE*delta/angle));
     if(new URLSearchParams(location.search).has('overhead')) {
       this.camera.position.set(20,300,30);this.camera.up.set(0,0,-1);this.camera.lookAt(20,0,30);
     }
-    if(!this.calm){this.animateCampusLife(delta);this.animated.forEach((mesh,i)=>{mesh.position.x=Math.sin(this.clock*.65+i*.7)*.045;mesh.position.z=Math.cos(this.clock*.42+i)*.025;});this.clouds.position.x=Math.sin(this.clock*.015)*6;this.motes.position.y=Math.sin(this.clock*.2)*.18;}
+    this.animateCampusLife(delta);
+    if(!this.calm){this.animated.forEach((mesh,i)=>{mesh.position.x=Math.sin(this.clock*.65+i*.7)*.045;mesh.position.z=Math.cos(this.clock*.42+i)*.025;});this.clouds.position.x=Math.sin(this.clock*.015)*6;this.motes.position.y=Math.sin(this.clock*.2)*.18;}
     this.markers.forEach(({beacon,diamond,index})=>{if(beacon.visible){beacon.position.y=route[index].marker[1]+.62+(this.calm?0:Math.sin(this.clock*1.7)*.045);diamond.rotation.y=this.calm?0:this.clock*.6;}});
     if(this.bookOpening>=0){
-      const t=this.calm?1:Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=this.bookOpeningSign*ease(t)*Math.PI*.82;
+      const t=Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=this.bookOpeningSign*ease(t)*Math.PI*.82;
       const step=Math.floor(t*10);if(step!==this.bookShadowStep){this.bookShadowStep=step;this.renderer.shadowMap.needsUpdate=true;}
     }
     if(this.mode==='discover'&&this.stop>=0){const marker=route[this.stop].marker;const point=new THREE.Vector3(marker[0],marker[1]+.18,marker[2]).project(this.camera);this.onMarker({x:(point.x*.5+.5)*innerWidth,y:(-.5*point.y+.5)*innerHeight,visible:point.z<1});}
