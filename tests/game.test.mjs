@@ -10,7 +10,7 @@ const guess = (state, id) => transition(state, { type: 'GUESS', id });
 test('the curated case has seven text clues, a unique answer, and a realistic roster', () => {
   assert.equal(mystery.clues.length, 7);
   mystery.clues.forEach(clue => { assert.equal(typeof clue.text, 'string'); assert.ok(clue.text.length > 10); assert.ok(!clue.text.includes(mystery.name)); });
-  assert.ok(roster.length === 100);
+  assert.ok(roster.length === 128);
   assert.equal(new Set(roster.map(person => person.id)).size, roster.length);
   assert.equal(roster.filter(person => person.id === mystery.studentId).length, 1);
 });

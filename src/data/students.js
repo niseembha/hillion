@@ -599,5 +599,173 @@ export const students = [
     "name": "Natalia Serrano",
     "firstName": "Natalia",
     "classYear": "2027"
+  },
+  {
+    "id": "johnny-sewak",
+    "name": "Johnny Sewak",
+    "firstName": "Johnny",
+    "classYear": "2027"
+  },
+  {
+    "id": "aaron-sharma",
+    "name": "Aaron Sharma",
+    "firstName": "Aaron",
+    "classYear": "2027"
+  },
+  {
+    "id": "ayush-shetty",
+    "name": "Ayush Shetty",
+    "firstName": "Ayush",
+    "classYear": "2027"
+  },
+  {
+    "id": "izzy-shiloh",
+    "name": "Izzy Shiloh",
+    "firstName": "Izzy",
+    "classYear": "2027"
+  },
+  {
+    "id": "landon-shine",
+    "name": "Landon Shine",
+    "firstName": "Landon",
+    "classYear": "2027"
+  },
+  {
+    "id": "eli-sims",
+    "name": "Eli Sims",
+    "firstName": "Eli",
+    "classYear": "2027"
+  },
+  {
+    "id": "rahul-singhal",
+    "name": "Rahul Singhal",
+    "firstName": "Rahul",
+    "classYear": "2027"
+  },
+  {
+    "id": "lillian-smith",
+    "name": "Lillian Smith",
+    "firstName": "Lillian",
+    "classYear": "2027"
+  },
+  {
+    "id": "savanna-smith",
+    "name": "Savanna Smith",
+    "firstName": "Savanna",
+    "classYear": "2027"
+  },
+  {
+    "id": "geneva-smith-kuzmich",
+    "name": "Geneva Smith-Kuzmich",
+    "firstName": "Geneva",
+    "classYear": "2027"
+  },
+  {
+    "id": "briana-solomon",
+    "name": "Briana Solomon",
+    "firstName": "Briana",
+    "classYear": "2027"
+  },
+  {
+    "id": "jenna-stenberg",
+    "name": "Jenna Stenberg",
+    "firstName": "Jenna",
+    "classYear": "2027"
+  },
+  {
+    "id": "penelope-stone",
+    "name": "Penelope Stone",
+    "firstName": "Penelope",
+    "classYear": "2027"
+  },
+  {
+    "id": "collin-sun",
+    "name": "Collin Sun",
+    "firstName": "Collin",
+    "classYear": "2027"
+  },
+  {
+    "id": "mahedhar-sunkara",
+    "name": "Mahedhar Sunkara",
+    "firstName": "Mahedhar",
+    "classYear": "2027"
+  },
+  {
+    "id": "rohan-swaminathan",
+    "name": "Rohan Swaminathan",
+    "firstName": "Rohan",
+    "classYear": "2027"
+  },
+  {
+    "id": "talia-taback",
+    "name": "Talia Taback",
+    "firstName": "Talia",
+    "classYear": "2027"
+  },
+  {
+    "id": "sidrah-tarpeh",
+    "name": "Sidrah Tarpeh",
+    "firstName": "Sidrah",
+    "classYear": "2027"
+  },
+  {
+    "id": "vivek-thankavel",
+    "name": "Vivek Thankavel",
+    "firstName": "Vivek",
+    "classYear": "2027"
+  },
+  {
+    "id": "abbie-tsai",
+    "name": "Abbie Tsai",
+    "firstName": "Abbie",
+    "classYear": "2027"
+  },
+  {
+    "id": "ben-weisberg",
+    "name": "Ben Weisberg",
+    "firstName": "Ben",
+    "classYear": "2027"
+  },
+  {
+    "id": "sadie-werner",
+    "name": "Sadie Werner",
+    "firstName": "Sadie",
+    "classYear": "2027"
+  },
+  {
+    "id": "vivian-white",
+    "name": "Vivian White",
+    "firstName": "Vivian",
+    "classYear": "2027"
+  },
+  {
+    "id": "jordyn-wilkofsky",
+    "name": "Jordyn Wilkofsky",
+    "firstName": "Jordyn",
+    "classYear": "2027"
+  },
+  {
+    "id": "lilly-williams",
+    "name": "Lilly Williams",
+    "firstName": "Lilly",
+    "classYear": "2027"
+  },
+  {
+    "id": "miles-wilson",
+    "name": "Miles Wilson",
+    "firstName": "Miles",
+    "classYear": "2027"
+  },
+  {
+    "id": "eli-yaffe",
+    "name": "Eli Yaffe",
+    "firstName": "Eli",
+    "classYear": "2027"
+  },
+  {
+    "id": "kaitlyn-yoo",
+    "name": "Kaitlyn Yoo",
+    "firstName": "Kaitlyn",
+    "classYear": "2027"
   }
 ];

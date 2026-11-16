@@ -1,6 +1,6 @@
 # Students and dated mysteries
 
-The supplied excerpt contains **100 unique names**, ending at Natalia Serrano. Its directory heading reports 128 results, so 28 names are not present in the paste. All 100 supplied names were imported verbatim, including accents and compound surnames. Emails, account messages, directory filters and contact information were excluded.
+The updated supplied excerpt contains **128 unique names**, including the 28 absent from the first paste. All 128 names are imported verbatim, including accents and compound surnames. The original 100 student IDs are preserved. Emails, account messages, directory filters and contact information are excluded.
 
 `src/data/students.js` holds stable student IDs, display names, first names and class years. Keep IDs unchanged when correcting spelling. `src/data/cases.js` owns each edition's answer reference and independent seven-clue snapshot. The current case is `prototype-001`, answer `niseem-bhattacharya`, with `date: null` and `contentStatus: placeholder`. No release date was invented. All seven clue objects are unchanged. The old portrait and invented biography are replaced by an initials placeholder and a clear prototype notice.
 
