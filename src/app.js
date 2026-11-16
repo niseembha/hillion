@@ -68,7 +68,7 @@ function render() {
         : `<button class="collected-button" data-action="history"><span>▤</span> Collected notes <b>${readCount}</b></button><span class="demo-caption">FICTIONAL MYSTERY / NO. ${mystery.number}</span>`;
   }
   if (view === "intro") {
-    app.innerHTML = `<section class="intro-screen"><div class="intro-edition"><span class="sun-symbol">✳</span> A GREENHILL CAMPUS MYSTERY <i></i> NO. ${mystery.number}</div><h1 tabindex="-1">Seven clues.<br><em>One Greenhill senior.</em></h1><button class="primary-button start-button" data-action="start">Start today’s mystery ${arrow}</button><span class="intro-footnote">FOLLOW THE CLUES. FIND YOUR PERSON.</span></section><div class="intro-world-caption"><span class="small-compass">N <i>✧</i></span><span>BRINKMANN FIELD<br><b>GREENHILL, REIMAGINED</b></span></div>`;
+    app.innerHTML = `<section class="intro-screen" aria-label="Hillion title screen"><div class="intro-edition">A GREENHILL MYSTERY</div><h1 tabindex="-1">HILLION<span>.</span></h1><p class="title-tagline">Seven clues. One Greenhill senior.</p><div class="title-rule" aria-hidden="true"><i></i>✧<i></i></div><button class="primary-button start-button" data-action="start">BEGIN MYSTERY ${arrow}</button></section><div class="intro-world-caption"><span>CASE NO. ${mystery.number}</span><span>GREENHILL SCHOOL · GOLDEN HOUR</span></div>`;
   } else if (view === "travel") {
     app.innerHTML = `<div class="journey-indicator" aria-label="Traveling to ${esc(route[state.clues - 1].name)}"><span class="crosshair"></span></div>`;
   } else if (view === "discover") {
@@ -218,6 +218,10 @@ function bindActions() {
       (button.onclick = () => {
         const action = button.dataset.action;
         if (action === "start" && view === "intro") {
+          button.disabled = true;
+          const departing = app.querySelector('.intro-screen').cloneNode(true);
+          departing.classList.add('title-departure');departing.setAttribute('aria-hidden','true');departing.inert=true;
+          document.body.append(departing);setTimeout(()=>departing.remove(),700);
           state = transition(state, { type: "START" });
           visit(0);
         }

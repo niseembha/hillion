@@ -25,7 +25,7 @@ test('field, gym and basketball slab keep the map relationships visible in clip 
  assert.ok(field.maxZ>gym.maxZ&&field.minZ>gym.maxZ,'Field is south of the gym');
  assert.ok(field.maxX>gym.maxX,'Field eastern sideline extends beyond the gym east facade');
  assert.ok(introShot.position[0]>=field.maxX&&introShot.position[2]>field.minZ,'Opening is at the eastern sideline');
- assert.ok(introShot.look[0]<introShot.position[0],'Footage opens looking west across the field');
+ assert.ok(introShot.look[0]<introShot.position[0],'Gateway framing looks slightly west of north toward the gym');
  assert.ok(route[1].position[0]>gym.maxX,'Northbound gym approach is east of the gym');
  assert.ok(mapPoint(landmarks.basketball[0],0)[0]>route[1].position[0],'Basketball slab is right/east of the northbound path');
 });

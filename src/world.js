@@ -38,7 +38,7 @@ export class CampusWorld {
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.12;
     this.scene = new THREE.Scene();
-    this.scene.fog = new THREE.Fog('#cfddc7', 96, 280);
+    this.scene.fog = new THREE.Fog('#d8d6bc', 80, 280);
     this.camera = new THREE.PerspectiveCamera(53, innerWidth / innerHeight, 0.1, 460);
     this.camera.position.copy(this.basePosition);
     this.makeMaterials();
@@ -177,13 +177,13 @@ export class CampusWorld {
   }
 
   makeLighting() {
-    this.scene.add(new THREE.HemisphereLight('#e0f0e5', '#a0a56e', 2.1));
-    const sun = new THREE.DirectionalLight('#fff0ce', 3.1); sun.position.set(-64, 94, 60); sun.castShadow = true;
+    this.scene.add(new THREE.HemisphereLight('#e4e9dc', '#8a8860', 1.25));
+    const sun = new THREE.DirectionalLight('#ffdda7', 3.0); sun.position.set(-64, 54, 60); sun.castShadow = true;
     sun.shadow.mapSize.set(innerWidth < 700 ? 2048 : 4096, innerWidth < 700 ? 2048 : 4096);
     Object.assign(sun.shadow.camera, { left: -75, right: 75, top: 75, bottom: -75, near: 1, far: 260 });
     sun.shadow.normalBias = 0.08; sun.shadow.bias = 0.00015; sun.shadow.radius = 3;
     this.shadowAnchor=new THREE.Vector3(this.basePosition.x,0,this.basePosition.z);
-    sun.position.copy(this.shadowAnchor).add(new THREE.Vector3(-64,94,60));
+    sun.position.copy(this.shadowAnchor).add(new THREE.Vector3(-64,54,60));
     sun.target.position.copy(this.shadowAnchor);
     this.sun = sun; this.scene.add(sun,sun.target);
   }
@@ -423,7 +423,7 @@ export class CampusWorld {
     const departure=departureWaypoints(index>0?route[index-1]:null,this.basePosition.toArray(),stop.via[0]||stop.position,blocked);
     const via=[...departure,...stop.via,stop.position];
     const journey=this.move(arrival.position,arrival.look,via,stop.duration);
-    this.travel.kind='walk';this.travel.marker=stop.marker;
+    this.travel.kind=index===0?'opening':'walk';this.travel.marker=stop.marker;
     this.travel.duration=this.calm?250:walkDuration(this.travel.curve.getLength());
     return journey;
   }
@@ -512,7 +512,7 @@ export class CampusWorld {
     const sx=this.camera.position.x-this.shadowAnchor.x,sz=this.camera.position.z-this.shadowAnchor.z;
     if(sx*sx+sz*sz>324){
       this.shadowAnchor.set(this.camera.position.x,0,this.camera.position.z);
-      this.sun.position.copy(this.shadowAnchor).add(new THREE.Vector3(-64,94,60));
+      this.sun.position.copy(this.shadowAnchor).add(new THREE.Vector3(-64,54,60));
       this.sun.target.position.copy(this.shadowAnchor);this.sun.target.updateMatrixWorld();
       this.renderer.shadowMap.needsUpdate=true;
     }

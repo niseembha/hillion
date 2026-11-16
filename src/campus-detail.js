@@ -293,10 +293,14 @@ export const campusDetail = {
     this.makeStudent([1490,654],[1490,678],'#ac8f8b',9,.026);
     this.makePeacock([1040,654],[1053,650],5);
     this.makePeacock([1388,594],[1402,603],13);
+    // Gateway infill is outside the playing field and existing basketball slab.
+    for(const [mx,my,size]of [[771,925,1.65],[826,928,1.6],[841,991,1.2]]){const q=p(mx,my,0);this.tree(q[0],q[2],size);}
+    this.plantingBed([807,950,824,958]);
+    this.makePeacock([815,935],[828,935],3);
     this.animateCampusLife(0);
     // Reuse the observed low rail vocabulary at the VSI glazing / MPAC planter.
     this.handrail(p(835,548.3,0),p(857,548.3,0));
     this.handrail(p(905,548.3,0),p(931,548.3,0));
-    this.environmentStats={trees:this.treeRecords.length,details:this.detailRecords.length,students:5,peacocks:2};
+    this.environmentStats={trees:this.treeRecords.length,details:this.detailRecords.length,students:5,peacocks:3};
   }
 };
