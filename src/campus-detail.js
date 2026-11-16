@@ -290,11 +290,9 @@ export const campusDetail = {
     for(const [mx,color]of [[1359,'#c4c2b7'],[1378,'#7b8d8e'],[1397,'#b6ad94'],[1416,'#909793'],[1437,'#d4d4c8']])this.parkedCar(mx,491,color);
     for(const [my,color]of [[495,'#b6bdb8'],[522,'#8d9fa0'],[549,'#c4bba7']])this.parkedCar(755,my,color,Math.PI/2);
     this.detailBench(1092,625,.1);this.detailBench(1115,649,-.35);
-    this.makeStudent([824,814],[847,814],'#a98f7c',2);
-    this.makeStudent([866,562],[881,562],'#7e8c99',8,.02);
-    this.makeStudent([1048,589],[1074,589],'#b3a17b',4);
-    this.makeStudent([1264,492],[1285,492],'#88957b',12,.043);
-    this.makeStudent([1490,654],[1490,678],'#ac8f8b',9,.026);
+    this.makePeacock([824,814],[847,814],2);
+    this.makePeacock([866,562],[881,562],8);
+    this.makePeacock([1264,492],[1285,492],12);
     this.makePeacock([1040,654],[1053,650],5);
     this.makePeacock([1388,594],[1402,603],13);
     // Gateway infill is outside the playing field and existing basketball slab.
@@ -305,6 +303,6 @@ export const campusDetail = {
     // Reuse the observed low rail vocabulary at the VSI glazing / MPAC planter.
     this.handrail(p(835,548.3,0),p(857,548.3,0));
     this.handrail(p(905,548.3,0),p(931,548.3,0));
-    this.environmentStats={trees:this.treeRecords.length,details:this.detailRecords.length,students:5,peacocks:3};
+    this.environmentStats={trees:this.treeRecords.length,details:this.detailRecords.length,students:0,peacocks:6};
   }
 };

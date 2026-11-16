@@ -451,3 +451,10 @@ body[data-view=intro] #campus-world { animation: world-dawn 1.4s ease-out both; 
 }
 @media(max-height:550px) and (min-width:651px) { .intro-screen { padding-top:42px; }.intro-screen h1 { font-size:100px; }.intro-screen .title-tagline { margin-top:12px; }.title-rule { display:none; }.intro-screen .start-button { bottom:12%;padding:15px 24px; } }
 @media(prefers-reduced-motion:reduce) { .intro-screen *,body[data-view=intro] #campus-world,.intro-world-caption,.title-departure { animation:none!important; }.title-departure { display:none; } }
+.clue-overlay { width:min(560px,calc(100vw - 40px));max-height:calc(100dvh - 170px);overflow:auto;padding:30px;font-size:16px; }
+.clue-text { font-size:clamp(20px,2vw,27px);line-height:1.5; }
+.guess-guidance { margin:20px 0;padding:18px;background:#e5eadb;border:1px solid #c3cfb7;border-radius:4px; }
+.guess-guidance strong { display:block;font-size:18px;color:#234f3b; }.guess-guidance p { margin:10px 0;font-size:14px;line-height:1.5; }
+.past-clues-button,.guess-toggle { background:#234f3b;color:#fff5df;padding:14px 18px;border-radius:3px;font-size:15px;font-weight:600; }
+.collected-button { background:#faf5e7;color:#234f3b;font-size:14px;font-weight:600;padding:12px 18px;border:1px solid #d5b66f;border-radius:4px; }.collected-button>b { font-size:12px;width:24px;height:24px;border-color:#234f3b; }
+@media(max-width:650px){.clue-overlay{left:12px;right:12px;bottom:78px;width:auto;padding:20px;max-height:calc(100dvh - 158px)}.guess-guidance{padding:12px;margin:12px 0}.clue-text{font-size:20px}.demo-caption{display:none}}

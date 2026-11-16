@@ -15,7 +15,7 @@ export class CampusWorld {
     this.onMarker = onMarker;
     this.onProgress = onProgress;
     this.onError = onError;
-    this.calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+    this.calm = true;
     this.target = v(introShot.look);
     this.basePosition = v(introShot.position);
     this.mode = 'intro';
@@ -427,7 +427,7 @@ export class CampusWorld {
     this.renderer.setSize(innerWidth,innerHeight,false);
     this.camera.aspect=innerWidth/innerHeight;this.camera.fov=innerWidth<650?66:53;this.camera.updateProjectionMatrix();
   }
-  setCalm(value) { this.calm=value; if(value&&this.travel)this.finishTravel(); }
+  setCalm(value) { this.calm=true; if(value&&this.travel)this.finishTravel(); }
   cancelTravel() { if(this.travel){this.travel.resolve(false);this.travel=null;} }
   moveTo(index) {
     this.stop=index;this.mode='travel';this.markers.forEach(marker=>marker.beacon.visible=false);

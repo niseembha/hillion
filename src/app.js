@@ -34,7 +34,7 @@ let readCount = 0;
 let guessOpen = false;
 let feedback = "";
 let revealStage = "";
-let calm = matchMedia("(prefers-reduced-motion: reduce)").matches;
+let calm = true;
 let revealTimer;
 
 function setView(next) {
@@ -64,8 +64,8 @@ function render() {
     location.innerHTML = `<span class="eyebrow">${number(state.clues)} / GREENHILL</span><h2>${esc(stop.name)}</h2><span class="location-subtitle">${esc(view === "travel" ? stop.subtitle : stop.object)}</span>`;
     footer.innerHTML =
       view === "travel"
-        ? `<div class="travel-status"><span class="walking-dots"><i></i><i></i><i></i></span><span>Following the story</span><div class="travel-progress"><i id="travel-fill"></i></div></div><button class="quiet-button arrival-button" data-action="arrive">Arrive now ${arrow}</button>`
-        : `<button class="collected-button" data-action="history"><span>▤</span> Collected notes <b>${readCount}</b></button><span class="demo-caption">FICTIONAL MYSTERY / NO. ${mystery.number}</span>`;
+        ? `<div class="travel-status"><span class="walking-dots"><i></i><i></i><i></i></span><span>Following the story</span><div class="travel-progress"><i id="travel-fill"></i></div></div><button class="quiet-button arrival-button" data-action="arrive">Skip animation ${arrow}</button>`
+        : `<button class="collected-button" data-action="history"><span>▤</span> View past clues <b>${readCount}</b></button><span class="demo-caption">FICTIONAL MYSTERY / NO. ${mystery.number}</span>`;
   }
   if (view === "intro") {
     app.innerHTML = `<section class="intro-screen" aria-label="Hillion title screen"><div class="intro-edition">A GREENHILL MYSTERY</div><h1 tabindex="-1">HILLION<span>.</span></h1><p class="title-tagline">Seven clues. One Greenhill senior.</p><div class="title-rule" aria-hidden="true"><i></i>✧<i></i></div><button class="primary-button start-button" data-action="start">BEGIN MYSTERY ${arrow}</button></section><div class="intro-world-caption"><span>CASE NO. ${mystery.number}</span><span>GREENHILL SCHOOL · GOLDEN HOUR</span></div>`;
@@ -83,7 +83,7 @@ function render() {
         submitGuess,
       );
   } else if (view === "reveal") {
-    app.innerHTML = `<section class="reveal-screen ${revealStage}"><button class="quiet-button skip-button" data-action="skip">Skip to spotlight ${arrow}</button><div class="reveal-copy"><span class="eyebrow">${state.solved ? "MYSTERY SOLVED" : "STORY DISCOVERED"}</span><h1 tabindex="-1">${revealStage === "identity" ? esc(mystery.name) : state.solved ? "You made the connection." : "Every story has a someone."}</h1><p>${revealStage === "identity" ? "The person behind the clues." : "Meet the person behind it all."}</p></div><div class="collected-orbit" aria-hidden="true">${Array.from({ length: 7 }, (_, i) => `<span style="--i:${i}">${number(i + 1)}</span>`).join("")}</div></section>`;
+    app.innerHTML = `<section class="reveal-screen ${revealStage}"><button class="quiet-button skip-button" data-action="skip">Skip animation ${arrow}</button><div class="reveal-copy"><span class="eyebrow">${state.solved ? "MYSTERY SOLVED" : "STORY DISCOVERED"}</span><h1 tabindex="-1">${revealStage === "identity" ? esc(mystery.name) : state.solved ? "You made the connection." : "Every story has a someone."}</h1><p>${revealStage === "identity" ? "The person behind the clues." : "Meet the person behind it all."}</p></div><div class="collected-orbit" aria-hidden="true">${Array.from({ length: 7 }, (_, i) => `<span style="--i:${i}">${number(i + 1)}</span>`).join("")}</div></section>`;
   } else if (view === "spotlight") {
     app.innerHTML = spotlight();
   }
@@ -94,9 +94,10 @@ function clueOverlay() {
   const clue = mystery.clues[state.clues - 1];
   const attempts = remaining(state);
   return `<section class="clue-overlay ${feedback ? "has-feedback" : ""}" aria-labelledby="clue-title"><div class="note-topline"><span class="eyebrow">CLUE ${number(state.clues)} <span>/ ${esc(clue.label)}</span></span><span class="note-seal" aria-hidden="true">✳</span></div><h2 id="clue-title" class="sr-only" tabindex="-1">Clue ${state.clues}</h2><p class="clue-text">“${esc(clue.text)}”</p>
+    <div class="guess-guidance"><strong>${attempts ? `Ready to make a guess? ${attempts} ${attempts === 1 ? 'guess' : 'guesses'} left.` : 'No guesses left — keep collecting clues.'}</strong><p>Guess now, or read another clue first. You can review every note you have collected.</p><button class="past-clues-button" data-action="history">View past clues (${readCount})</button></div>
     ${feedback ? `<div class="guess-feedback" role="status"><span>×</span><p>${esc(feedback)}</p></div>` : ""}
     ${guessOpen && attempts ? `<form id="guess-form" autocomplete="off"><label class="sr-only" for="senior-search">Search the fictional senior roster</label><div class="search-wrapper"><span class="search-symbol" aria-hidden="true">⌕</span><input id="senior-search" role="combobox" aria-autocomplete="list" aria-expanded="false" aria-controls="roster-options" placeholder="Search a senior’s name…" autocapitalize="words" spellcheck="false"/><button type="button" class="clear-search" aria-label="Clear selected name" hidden>×</button><ul id="roster-options" class="roster-options" role="listbox" aria-label="Matching seniors" hidden></ul></div><button type="submit" class="submit-guess" disabled>Submit guess ${arrow}</button></form>` : ""}
-    <div class="clue-actions">${attempts ? `<button class="guess-toggle" data-action="guess-toggle">${guessOpen ? "Back to the clue" : "Make a guess"} <span>${guessOpen ? "−" : "+"}</span></button>` : '<span class="no-guesses">No guesses left. Keep exploring.</span>'}${state.clues < 7 ? `<button class="primary-button continue-button" data-action="next">Continue ${arrow}</button>` : `<button class="primary-button continue-button" data-action="finish">${attempts ? "Reveal senior" : "Meet the senior"} ${arrow}</button>`}</div>${state.clues === 7 && attempts ? '<span class="finish-hint">Reveal without solving: 0 points</span>' : ""}</section>`;
+    <div class="clue-actions">${attempts ? `<button class="guess-toggle" data-action="guess-toggle">${guessOpen ? "Back to the clue" : "Make a guess now"} <span>${guessOpen ? "−" : "+"}</span></button>` : '<span class="no-guesses">No guesses left. Keep exploring.</span>'}${state.clues < 7 ? `<button class="primary-button continue-button" data-action="next">Continue ${arrow}</button>` : `<button class="primary-button continue-button" data-action="finish">${attempts ? "Reveal senior" : "Meet the senior"} ${arrow}</button>`}</div>${state.clues === 7 && attempts ? '<span class="finish-hint">Reveal without solving: 0 points</span>' : ""}</section>`;
 }
 
 function spotlight() {
@@ -247,26 +248,7 @@ function bindActions() {
   );
 }
 
-function toggleMotion() {
-  calm = !calm;
-  world?.setCalm(calm);
-  updateMotionButtons();
-  announce(
-    calm
-      ? "Calm motion enabled. Camera journeys use a short transition."
-      : "Guided camera movement enabled.",
-  );
-}
-function updateMotionButtons() {
-  const label = calm ? "Enable guided camera motion" : "Use calm camera motion";
-  document.querySelector("#motion-button").setAttribute("aria-label", label);
-  document
-    .querySelector("#motion-button")
-    .setAttribute("aria-pressed", String(calm));
-  document.querySelector("#dialog-motion").textContent = calm
-    ? "✓ Calm motion is on"
-    : label;
-}
+function updateMotionButtons() {}
 
 pin.addEventListener("click", inspect);
 document.querySelector("#home-button").addEventListener("click", () => {
@@ -278,12 +260,8 @@ document.querySelector("#reset-button").addEventListener("click", () => {
 document
   .querySelector("#help-button")
   .addEventListener("click", () => help.showModal());
-document
-  .querySelector("#motion-button")
-  .addEventListener("click", toggleMotion);
-document
-  .querySelector("#dialog-motion")
-  .addEventListener("click", toggleMotion);
+
+
 document
   .querySelector("#fullscreen-button")
   .addEventListener("click", async () => {
@@ -304,7 +282,8 @@ document.addEventListener("fullscreenchange", () => {
       document.fullscreenElement ? "Exit fullscreen" : "Enter fullscreen",
     );
 });
-for (const dialog of [help, history]) {
+document.querySelector("#about-button").addEventListener("click",()=>document.querySelector("#about-dialog").showModal());
+for (const dialog of [help, history, document.querySelector("#about-dialog")]) {
   dialog
     .querySelector(".dialog-close")
     .addEventListener("click", () => dialog.close());
@@ -324,7 +303,7 @@ for (const dialog of [help, history]) {
 matchMedia("(prefers-reduced-motion: reduce)").addEventListener(
   "change",
   (event) => {
-    calm = event.matches;
+    calm = true;
     world?.setCalm(calm);
     updateMotionButtons();
   },
