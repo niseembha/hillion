@@ -182,7 +182,15 @@ export const campusDetail = {
     this.registerDetail('parked car',q[0],q[2],2.2,'parking visible in clips 04 and 09');
   },
 
-  makeStudent(start,end,color,phase=0){
+  actorContactShadow(group,x,z){
+    // Cached sun shadows suit static campus geometry. Keep moving contact
+    // shadows attached to the feet instead of leaving stale silhouettes.
+    group.traverse(object=>{object.castShadow=false;});
+    const shadow=new THREE.Mesh(new THREE.CircleGeometry(1,24),this.m.shadow);
+    shadow.rotation.x=-Math.PI/2;shadow.scale.set(x,z,1);shadow.position.y=.012;
+    group.add(shadow);
+  },
+  makeStudent(start,end,color,phase=0,ground=-.055){
     const m=this.m,body=this.material(color),skin=this.material('#c6a27e'),pack=this.material('#566477');
     const group=new THREE.Group(),limbs=[];
     const box=(w,h,d,mat,x,y,z)=>{const mesh=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat);mesh.position.set(x,y,z);mesh.castShadow=true;group.add(mesh);return mesh;};
@@ -197,7 +205,8 @@ export const campusDetail = {
       const arm=new THREE.Group();arm.position.set(side*.23,1.25,0);group.add(arm);
       const sleeve=new THREE.Mesh(new THREE.BoxGeometry(.095,.52,.1),body);sleeve.position.y=-.23;arm.add(sleeve);limbs.push(arm);
     }
-    this.scene.add(group);this.lifeActors.push({kind:'student',group,start:new THREE.Vector3(...p(...start,0)),end:new THREE.Vector3(...p(...end,0)),phase,limbs,speed:.48});
+    this.actorContactShadow(group,.27,.20);
+    this.scene.add(group);this.lifeActors.push({kind:'student',group,start:new THREE.Vector3(...p(...start,ground)),end:new THREE.Vector3(...p(...end,ground)),phase,limbs,speed:.48});
   },
   makePeacock(start,end,phase=0){
     const group=new THREE.Group(),blue=this.material('#387b83'),tail=this.material('#4b7860'),gold=this.m.gold,legs=[];
@@ -208,7 +217,8 @@ export const campusDetail = {
     for(let i=0;i<5;i++){const x=(i-2)*.06;const feather=mesh(this.leafGeometry,tail,x,.3,-.38,[.06,.04,.53]);feather.rotation.x=-.1;mesh(this.leafGeometry,gold,x,.34,-.68,[.018,.01,.025]);}
     for(const x of [-.075,.075]){const leg=mesh(this.cylinderGeometry,this.m.frame,x,.15,.02,[.014,.3,.014]);legs.push(leg);}
     for(const x of [-.025,0,.025])mesh(this.cylinderGeometry,blue,x,.94,.23,[.007,.12,.007]);
-    this.scene.add(group);this.lifeActors.push({kind:'peacock',group,start:new THREE.Vector3(...p(...start,0)),end:new THREE.Vector3(...p(...end,0)),phase,limbs:legs,speed:.22});
+    this.actorContactShadow(group,.25,.6);
+    this.scene.add(group);this.lifeActors.push({kind:'peacock',group,start:new THREE.Vector3(...p(...start,-.055)),end:new THREE.Vector3(...p(...end,-.055)),phase,limbs:legs,speed:.22});
   },
   animateCampusLife(delta){
     for(const actor of this.lifeActors||[]){
@@ -219,7 +229,7 @@ export const campusDetail = {
       else if(t<duration+3.5){u=1;heading=Math.PI*((t-duration)/3.5);}
       else if(t<duration*2+3.5){u=1-(t-duration-3.5)/duration;walking=true;heading=Math.PI;}
       else{heading=Math.PI+Math.PI*((t-duration*2-3.5)/3.5);}
-      actor.group.position.lerpVectors(actor.start,actor.end,u);actor.group.position.y=0;
+      actor.group.position.lerpVectors(actor.start,actor.end,u);
       actor.group.rotation.y=Math.atan2(actor.end.x-actor.start.x,actor.end.z-actor.start.z)+heading;
       actor.limbs.forEach((limb,i)=>{limb.rotation.x=walking?Math.sin(this.clock*4+actor.phase)*(i%2?-.22:.22):0;});
     }
@@ -277,10 +287,10 @@ export const campusDetail = {
     for(const [my,color]of [[495,'#b6bdb8'],[522,'#8d9fa0'],[549,'#c4bba7']])this.parkedCar(755,my,color,Math.PI/2);
     this.detailBench(1092,625,.1);this.detailBench(1115,649,-.35);
     this.makeStudent([824,814],[847,814],'#a98f7c',2);
-    this.makeStudent([866,562],[881,562],'#7e8c99',8);
+    this.makeStudent([866,562],[881,562],'#7e8c99',8,.02);
     this.makeStudent([1048,589],[1074,589],'#b3a17b',4);
-    this.makeStudent([1264,492],[1285,492],'#88957b',12);
-    this.makeStudent([1490,654],[1490,678],'#ac8f8b',9);
+    this.makeStudent([1264,492],[1285,492],'#88957b',12,.043);
+    this.makeStudent([1490,654],[1490,678],'#ac8f8b',9,.026);
     this.makePeacock([1040,654],[1053,650],5);
     this.makePeacock([1388,594],[1402,603],13);
     this.animateCampusLife(0);

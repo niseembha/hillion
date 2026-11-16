@@ -32,6 +32,8 @@ The previous loose canopy ring is replaced by rooted trees with branches and vis
 
 The detail layer reserves the authored walking paths, the closer note approaches and the reading positions. Beds are cut around these lanes instead of running mulch or shrubs across pavement. Object placement excludes building interiors and clue landings. Moving background routes are checked against the rendered walls and furniture. The open gym, VSI and MPAC clearances from the previous pass are retained.
 
+Ambient figures follow the lawn or paving height beneath their feet, with attached contact shadows that move with them. The yearbook refreshes its shadow as its cover opens.
+
 ## Camera and notes
 
 Walking now uses distance-led pacing: a soft start, steady accelerated walking pace and a soft stop. The aim follows a short distance ahead on the actual route, staying close to the horizon. A note is the reason for the final turn; arbitrary side glances and oscillating camera sway have been removed.

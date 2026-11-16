@@ -400,7 +400,7 @@ export class CampusWorld {
     const material = new THREE.MeshBasicMaterial({map:texture,side:THREE.DoubleSide});
     this.portrait = new THREE.Mesh(new THREE.PlaneGeometry(0.81,1.02),material);
     this.portrait.position.set(0,0.72,0.061);this.book.add(this.portrait);
-    this.bookOpening=this.clock;
+    this.bookOpening=this.clock;this.bookShadowStep=-1;
   }
 
   makeMotes() {
@@ -450,7 +450,7 @@ export class CampusWorld {
     this.move(pose.position,pose.look,[],1000);
   }
   async toReveal() {
-    this.mode='reveal';this.book.visible=true;this.markers.forEach(marker=>marker.beacon.visible=false);
+    this.mode='reveal';this.book.visible=true;this.renderer.shadowMap.needsUpdate=true;this.markers.forEach(marker=>marker.beacon.visible=false);
     const marker=route[Math.max(0,this.stop)].marker;
     this.markers[Math.max(0,this.stop)].group.visible=false;
     this.book.position.set(marker[0],.905,marker[2]);
@@ -500,7 +500,10 @@ export class CampusWorld {
     }
     if(!this.calm){this.animateCampusLife(delta);this.animated.forEach((mesh,i)=>{mesh.position.x=Math.sin(this.clock*.65+i*.7)*.045;mesh.position.z=Math.cos(this.clock*.42+i)*.025;});this.clouds.position.x=Math.sin(this.clock*.015)*6;this.motes.position.y=Math.sin(this.clock*.2)*.18;}
     this.markers.forEach(({beacon,diamond,index})=>{if(beacon.visible){beacon.position.y=route[index].marker[1]+.62+(this.calm?0:Math.sin(this.clock*1.7)*.045);diamond.rotation.y=this.calm?0:this.clock*.6;}});
-    if(this.bookOpening>=0){const t=this.calm?1:Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=this.bookOpeningSign*ease(t)*Math.PI*.82;}
+    if(this.bookOpening>=0){
+      const t=this.calm?1:Math.min(1,(this.clock-this.bookOpening)/1.2);this.cover.rotation.y=this.bookOpeningSign*ease(t)*Math.PI*.82;
+      const step=Math.floor(t*10);if(step!==this.bookShadowStep){this.bookShadowStep=step;this.renderer.shadowMap.needsUpdate=true;}
+    }
     if(this.mode==='discover'&&this.stop>=0){const marker=route[this.stop].marker;const point=new THREE.Vector3(marker[0],marker[1]+.18,marker[2]).project(this.camera);this.onMarker({x:(point.x*.5+.5)*innerWidth,y:(-.5*point.y+.5)*innerHeight,visible:point.z<1});}
     // Keep the sky inside the camera far plane throughout the campus journey.
     // A world-origin dome leaves a clipped black hole when viewed from the field.
