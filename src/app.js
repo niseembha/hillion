@@ -333,6 +333,7 @@ async function boot() {
       },
       onError: showWorldError,
     });
+    await world.ready;
     if (["overhead", "survey"].some(key => new URLSearchParams(window.location.search).has(key)))
       window.__campus = world;
     world.setCalm(calm);

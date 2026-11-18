@@ -1,7 +1,7 @@
 import * as THREE from '/vendor/three.module.js';
 import { footprints, mapPoint as p, MAP_SCALE } from './campus-layout.js';
 import { route, introShot } from './route.js';
-import { departureWaypoints, notePose } from './camera-motion.js';
+import { approachWaypoints, departureWaypoints, notePose } from './camera-motion.js';
 const distanceToRect=(x,z,b)=>Math.hypot(Math.max(b.minX-x,0,x-b.maxX),Math.max(b.minZ-z,0,z-b.maxZ));
 
 // Small props and planting are a mix of observed vocabulary and inferred infill.
@@ -20,7 +20,7 @@ export const campusDetail = {
       const arrival=notePose(stop),reading=notePose(stop,true);
       const blocked=q=>footprints.some(b=>!b.field&&q[0]>b.minX-.35&&q[0]<b.maxX+.35&&q[2]>b.minZ-.35&&q[2]<b.maxZ+.35);
       const index=route.indexOf(stop),departure=departureWaypoints(index>0?route[index-1]:null,previous,stop.via[0]||stop.position,blocked);
-      line([previous,...departure,...stop.via,stop.position,arrival.position]);
+      line([previous,...departure,...approachWaypoints(stop,index),arrival.position]);
       line([arrival.position,reading.position]);
       // Also reserve the authored centreline for overview / existing QA views.
       line([previous,...stop.via,stop.position]);

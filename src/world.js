@@ -2,7 +2,7 @@ import * as THREE from '/vendor/three.module.js';
 import { route, introShot, revealShot } from './route.js';
 import { footprints, mapPoint, landmarks, MAP_SCALE } from './campus-layout.js';
 
-import { departureWaypoints, notePose, walkingProgress, walkingTarget, walkDuration, TURN_RATE, smooth } from './camera-motion.js';
+import { approachWaypoints, departureWaypoints, notePose, walkingPlan, walkingProgress, walkingTarget, walkDuration, TURN_RATE, smooth } from './camera-motion.js';
 import { campusDetail } from './campus-detail.js';
 import { campusArchitecture } from './campus-architecture.js';
 
@@ -80,6 +80,8 @@ export class CampusWorld {
     });
     this.resize();
     this.camera.lookAt(this.target);
+    // Compile every material before Start can expose a new part of campus.
+    this.ready=this.renderer.compileAsync(this.scene,this.camera);
     this.animate(performance.now());
     canvas.dataset.ready = 'true';
   }
@@ -434,15 +436,24 @@ export class CampusWorld {
     const stop=route[index],arrival=notePose(stop);
     const blocked=q=>footprints.some(b=>!b.field&&q[0]>b.minX-.35&&q[0]<b.maxX+.35&&q[2]>b.minZ-.35&&q[2]<b.maxZ+.35);
     const departure=departureWaypoints(index>0?route[index-1]:null,this.basePosition.toArray(),stop.via[0]||stop.position,blocked);
-    const via=[...departure,...stop.via,stop.position];
+    const via=[...departure,...approachWaypoints(stop,index)];
     const journey=this.move(arrival.position,arrival.look,via,stop.duration);
-    this.travel.kind=index===0?'opening':'walk';this.travel.marker=stop.marker;
-    this.travel.duration=walkDuration(this.travel.curve.getLength());
-    if(index>0){
+    this.travel.kind='walk';this.travel.marker=stop.marker;
+    // Keep the fourth-to-fifth walk and arrival at their existing pace.
+    if(index===4)this.travel.duration=walkDuration(this.travel.length);
+    else {
+      this.travel.plan=walkingPlan(this.travel.curve,stop.marker,{cruise:index===3||index===5||index===6?6.2:8.1,turnRate:index===5||index===6?.40:.48});
+      this.travel.duration=this.travel.plan.duration;
+    }
+    {
       const initial=v(walkingTarget(this.travel.curve,0,this.travel.length,stop.marker));
       const q=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(this.camera.position,initial,this.camera.up));
       const angle=this.camera.quaternion.angleTo(q);
-      this.travel.turnDuration=angle>1.0?Math.min(1400,angle/TURN_RATE*700):0;
+      // Quintic slerp has a peak derivative of 1.875. Budget the whole turn
+      // before walking, including small departures, with no duration cap.
+      this.travel.turnDuration=angle>.03?Math.max(900,1.875*angle/(index===1?TURN_RATE:.78)*1000):0;
+      this.travel.fromOrientation=this.camera.quaternion.clone();
+      this.travel.initialOrientation=q;
       this.travel.initialLook=initial;
     }
     return journey;
@@ -454,6 +465,8 @@ export class CampusWorld {
       const points=[this.basePosition.clone(),...via.map(v),v(position)];
       // Height changes are a gentle lean, not a bouncing walking spline.
       this.travel={curve:new THREE.CatmullRomCurve3(points,false,'centripetal'),fromLook:this.target.clone(),toLook:v(look),position:v(position),fromHeight:this.basePosition.y,elapsed:0,duration,resolve,kind:'focus'};
+      this.travel.curve.arcLengthDivisions=1200;
+      this.travel.curve.updateArcLengths();
       this.travel.length=this.travel.curve.getLength();
     });
   }
@@ -501,10 +514,14 @@ export class CampusWorld {
     if(this.travel) {
       const travel=this.travel;travel.elapsed+=delta*1000;
       const turning=travel.elapsed<(travel.turnDuration||0);
-      const t=Math.max(0,Math.min(1,(travel.elapsed-(travel.turnDuration||0))/travel.duration)),u=travel.kind==='walk'?walkingProgress(t):smooth(t);
+      const walkingTime=Math.max(0,travel.elapsed-(travel.turnDuration||0));
+      const t=Math.max(0,Math.min(1,walkingTime/travel.duration)),u=travel.plan?travel.plan.progress(walkingTime):travel.kind==='walk'?walkingProgress(t):smooth(t);
       {
         this.basePosition.copy(travel.curve.getPointAt(u));
-        if(turning){this.target.lerpVectors(travel.fromLook,travel.initialLook,smooth(travel.elapsed/travel.turnDuration));}
+        if(turning){
+          this.camera.quaternion.slerpQuaternions(travel.fromOrientation,travel.initialOrientation,smooth(travel.elapsed/travel.turnDuration));
+          this.target.copy(travel.initialLook);
+        }
         else if(travel.kind==='walk'){
           this.basePosition.y=THREE.MathUtils.lerp(travel.fromHeight,1.72,smooth(t/.15));
           this.target.set(...walkingTarget(travel.curve,u,travel.length,travel.marker));
@@ -516,7 +533,7 @@ export class CampusWorld {
     const orientation=new THREE.Quaternion().setFromRotationMatrix(new THREE.Matrix4().lookAt(this.camera.position,this.target,this.camera.up));
     const angle=this.camera.quaternion.angleTo(orientation);
     if(this.mode==='survey')this.camera.quaternion.copy(orientation);
-    else this.camera.quaternion.slerp(orientation,angle<.00001?1:Math.min(1-Math.exp(-9*delta),TURN_RATE*delta/angle));
+    else if(!this.travel||this.travel.elapsed>=(this.travel.turnDuration||0))this.camera.quaternion.slerp(orientation,angle<.00001?1:Math.min(1-Math.exp(-5*delta),TURN_RATE*delta/angle));
     if(new URLSearchParams(location.search).has('overhead')) {
       this.camera.position.set(20,300,30);this.camera.up.set(0,0,-1);this.camera.lookAt(20,0,30);
     }

@@ -8,13 +8,13 @@ try{
  await page.goto(`${process.env.HILLION_URL||'http://localhost:5173'}/?survey`);
  await page.waitForFunction(()=>window.__campus);
  const result=await page.evaluate(async()=>{
-  const T=await import('/vendor/three.module.js'),{route,introShot}=await import('/src/route.js'),{departureWaypoints,notePose}=await import('/src/camera-motion.js');
+  const T=await import('/vendor/three.module.js'),{route,introShot}=await import('/src/route.js'),{approachWaypoints,departureWaypoints,notePose}=await import('/src/camera-motion.js');
   const w=window.__campus;w.calm=true;w.scene.updateMatrixWorld(true);
   const cast=(a,b)=>{const direction=b.clone().sub(a),length=direction.length();return new T.Raycaster(a,direction.normalize(),.001,length).intersectObjects(w.scene.children,true).filter(h=>h.object.isMesh&&h.object!==w.sky&&!h.object.material.transparent);};
   let previous=introShot.position;const collisions=[];
   for(const [index,stop]of route.entries()){
    const arrival=notePose(stop),reading=notePose(stop,true),departure=departureWaypoints(index>0?route[index-1]:null,previous,stop.via[0]||stop.position);
-   for(const [kind,points]of [['walk',[previous,...departure,...stop.via,stop.position,arrival.position]],['read',[arrival.position,reading.position]]]){
+   for(const [kind,points]of [['walk',[previous,...departure,...approachWaypoints(stop,index),arrival.position]],['read',[arrival.position,reading.position]]]){
     const curve=new T.CatmullRomCurve3(points.map(p=>new T.Vector3(...p)),false,'centripetal');
     const steps=Math.ceil(curve.getLength()/.35);
     for(let i=0;i<steps;i++)for(const height of [.4,1.6])for(const offset of [-.27,0,.27]){

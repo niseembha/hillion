@@ -5,6 +5,46 @@ export const WALK_SPEED=6.2;
 export const TURN_RATE=1.35; // radians / second, including the final note turn
 export const walkDuration=length=>Math.max(3000,Math.min(18500,length/WALK_SPEED*1000));
 
+// A timetable in arc distance lets long straights gain speed without rushing
+// corners. Brake before the bend, rather than reacting after entering it.
+export function walkingPlan(curve,marker,{cruise=8.1,turnRate=.48}={}){
+  const length=curve.getLength(),steps=Math.max(2,Math.ceil(length/.22));
+  const ds=length/steps,limits=[],directions=[];
+  for(let i=0;i<=steps;i++){
+    const u=i/steps,p=curve.getPointAt(u),aim=walkingTarget(curve,u,length,marker);
+    const d=aim.map((n,j)=>n-[p.x,p.y,p.z][j]),dl=Math.hypot(...d);
+    directions.push(d.map(n=>n/dl));
+    const remaining=length-i*ds;
+    limits.push(Math.min(cruise,2.1+(cruise-2.1)*smooth((remaining-2)/11)));
+  }
+  for(let i=1;i<steps;i++){
+    const a=directions[Math.max(0,i-2)],b=directions[Math.min(steps,i+2)];
+    const span=(Math.min(steps,i+2)-Math.max(0,i-2))*ds;
+    const curvature=Math.acos(clamp(a.reduce((sum,n,j)=>sum+n*b[j],0),-1,1))/span;
+    limits[i]=Math.min(limits[i],turnRate/Math.max(curvature,.0001));
+  }
+  limits[0]=limits[steps]=0;
+  const acceleration=1.6;
+  for(let i=1;i<=steps;i++)limits[i]=Math.min(limits[i],Math.sqrt(limits[i-1]**2+2*acceleration*ds));
+  for(let i=steps-1;i>=0;i--)limits[i]=Math.min(limits[i],Math.sqrt(limits[i+1]**2+2*acceleration*ds));
+  const times=[0];
+  for(let i=1;i<=steps;i++)times.push(times[i-1]+2*ds/(limits[i-1]+limits[i]));
+  return {duration:times[steps]*1000,progress(milliseconds){
+    const seconds=clamp(milliseconds/1000,0,times[steps]);
+    let lo=0,hi=steps;
+    while(lo+1<hi){const mid=(lo+hi)>>1;if(times[mid]<=seconds)lo=mid;else hi=mid;}
+    const dt=seconds-times[lo],duration=times[hi]-times[lo];
+    const distance=limits[lo]*dt+(limits[hi]-limits[lo])*dt*dt/(2*duration);
+    return clamp((lo*ds+distance)/length);
+  }};
+}
+
+// Leave out the overshooting staging point on approaches that used to look
+// away from the envelope and then hook sharply back toward it.
+export function approachWaypoints(stop,index){
+  return index===0||index===1||index===3 ? [...stop.via] : [...stop.via,stop.position];
+}
+
 // Integral of a raised-cosine velocity ramp: steady pace between soft starts/stops.
 export function walkingProgress(t,ramp=.12){
   t=clamp(t);
